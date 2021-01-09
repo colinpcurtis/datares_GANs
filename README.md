@@ -1,4 +1,4 @@
-#DataRes GANs
+# DataRes GANs
 
 
 ### Installation and Setup
