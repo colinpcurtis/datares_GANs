@@ -2,10 +2,10 @@
 
 
 ### Installation and Setup
-It is recommended that this project is ran on a cloud instance to make easy use of GPU computing.
-
-Clone the repo with ```git clone https://github.com/colinpcurtis/datares_GANs.git```. Then run ```./install.sh``` 
-to install all necessary NVIDIA drivers and CUDA to use the GPU.  
+It is recommended to run this project on a cloud instance to make easy use of GPU computing.  Once the VM is set up, clone
+the repo with ```git clone https://github.com/colinpcurtis/datares_GANs.git```.  Then ```cd datares_GANs``` , 
+and run ```./install.sh```to install gcc, the NVIDIA drivers, and CUDA.  You will have to manually agree 
+to a few commands.  
 
 If that installation is successful, the nvidia control panel should be displayed on the window.  
 
