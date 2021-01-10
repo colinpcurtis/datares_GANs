@@ -114,8 +114,8 @@ class DCGAN:
                 # whether it's a real or fake image
 
                 if self.verbose != 0 and batch_idx % 100 == 0:
-                    print(f"Epoch [{epoch}/{NUM_EPOCHS}] Batch {batch_idx}/{len(dataloader)} \
-						  Loss D: {loss_disc:.4f}, loss G: {loss_gen:.4f}, D_X: {D_x}, D_G_z: {D_G_z}")
+                    print(f"Epoch [{epoch}/{self.num_epochs}] Batch {batch_idx}/{len(dataloader)}"
+                          "Loss D: {loss_disc:.4f}, loss G: {loss_gen:.4f}, D_X: {D_x}, D_G_z: {D_G_z}")
 
                     with torch.no_grad():
                         fake = gen(fixed_noise)
