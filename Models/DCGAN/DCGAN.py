@@ -7,8 +7,8 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-from Models.Discriminator import Discriminator
-from Models.Generator import Generator
+from Models.DCGAN.Discriminator import Discriminator
+from Models.DCGAN.Generator import Generator
 
 # Hyperparameters etc.
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -21,6 +21,11 @@ NOISE_DIM = 100
 NUM_EPOCHS = 5
 FEATURES_DISC = 64
 FEATURES_GEN = 64
+
+
+def initialize_weights(layer):
+    if type(layer) == nn.Conv2d or type(layer) == nn.ConvTranspose2d:
+        layer.weight.data.normal_(0, .2)
 
 '''
 Deep convolutional GAN
@@ -52,12 +57,12 @@ class DCGAN:
         gen = Generator(NOISE_DIM, CHANNELS_IMG, FEATURES_GEN).to(device)
         disc = Discriminator(CHANNELS_IMG, FEATURES_DISC).to(device)
 
-        # initialize_weights(gen)
-        # initialize_weights(disc)
+        gen.apply(initialize_weights)
+        disc.apply(initialize_weights)
 
         opt_gen = optim.Adam(gen.parameters(), lr=LEARNING_RATE, betas=(0.5, 0.999))
         opt_disc = optim.Adam(disc.parameters(), lr=LEARNING_RATE, betas=(0.5, 0.999))
-        criterion = nn.BCELoss()
+        loss = nn.BCELoss()
 
         fixed_noise = torch.randn(32, NOISE_DIM, 1, 1).to(device)
         writer_real = SummaryWriter(f"{self.save_path}/real")
@@ -89,9 +94,9 @@ class DCGAN:
                 disc_real = disc(real).reshape(-1)
 
                 D_x = disc_real.mean().item()
-                loss_disc_real = criterion(disc_real, torch.ones_like(disc_real))
+                loss_disc_real = loss(disc_real, torch.ones_like(disc_real))
                 disc_fake = disc(fake.detach()).reshape(-1)
-                loss_disc_fake = criterion(disc_fake, torch.zeros_like(disc_fake))
+                loss_disc_fake = loss(disc_fake, torch.zeros_like(disc_fake))
                 loss_disc = (loss_disc_real + loss_disc_fake) / 2
                 disc.zero_grad()
                 loss_disc.backward()
@@ -103,7 +108,7 @@ class DCGAN:
 
                 D_G_z = output.mean().item()
                 # mean classification for fake
-                loss_gen = criterion(output, torch.ones_like(output))
+                loss_gen = loss(output, torch.ones_like(output))
                 gen.zero_grad()
                 loss_gen.backward()
                 opt_gen.step()
