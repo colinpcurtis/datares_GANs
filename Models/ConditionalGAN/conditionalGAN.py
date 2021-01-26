@@ -100,7 +100,7 @@ class conditionalGAN:
         writer_gen_prob = SummaryWriter(f"logs/{self.save_path}/gen/prob")
         # track D(G(x)) - probability of classifying fake image as real
 
-        # we'll want to add an LR scheduler eventually
+        # want to add an LR scheduler eventually
         gen_optimizer = Adam(gen.parameters(), lr=LEARNING_RATE, betas=BETAS)
         disc_optimizer = Adam(disc.parameters(), lr=LEARNING_RATE, betas=BETAS)
 

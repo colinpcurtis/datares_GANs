@@ -32,3 +32,11 @@ This command runs the DCGAN model for 10 epochs, and saves tensorboard results t
 TensorBoard results can be accessed by running ```tensorboard --logdir ./logs```.
 
 It is recommended to download the logs file locally and then run TensorBoard so as not to waste expensive GPU time.
+
+### Training the Conditional GAN
+The main goal of this repository is to implement a conditional GAN for image segmentation on a medical dataset
+of roughly 30,000 CT scans.  The dataset originates from the following NIH link 
+[https://nihcc.app.box.com/v/DeepLesion/folder/50715173939](https://nihcc.app.box.com/v/DeepLesion/folder/50715173939).
+
+The dataset will download by running ```python3 fetch_dataset.py```.  It is recommended to download roughly a 
+quarter of the entire set to do baseline testing before executing an entire training run.
