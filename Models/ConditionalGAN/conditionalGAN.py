@@ -24,7 +24,7 @@ device = device("cuda" if is_available() else "cpu")
 
 
 # model constants
-BATCH_SIZE = 64  # make batch size as big as possible on your machine until you get memory errors
+BATCH_SIZE = 8  # make batch size as big as possible on your machine until you get memory errors
 IMAGE_SIZE = 511
 CHANNELS_IMG = 3
 
