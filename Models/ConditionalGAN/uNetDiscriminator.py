@@ -32,35 +32,35 @@ class conditionalDiscriminator(nn.Module):
         # inputs are [BS, channels, 511, 511]
         # concatenate real and fake images on channels axis
         # see tensorflow link for detailed architecture
-        concat = cat((real, fake), 1)
+        x = cat((real, fake), 1)
         # [BS, 2*channels, 511, 511]
 
-        seq1 = self.conv1(concat)
+        x = self.conv1(x)
         # [BS, 64, 255, 255]
 
-        seq2 = self.conv2(seq1)
+        x = self.conv2(x)
         # [BS, 128, 127, 127]
 
-        seq3 = self.conv3(seq2)
+        x = self.conv3(x)
         # [BS, 256, 63, 63]
 
-        seq4 = self.conv4(seq3)
+        x = self.conv4(x)
         # [BS, 512, 31, 31]
 
-        seq5 = self.zeroPad(seq4)
+        x = self.zeroPad(x)
         # [BS, 512, 35, 35]
 
-        seq6 = self.conv5(seq5)
+        x = self.conv5(x)
         # [BS, 512, 30, 30]
 
-        seq7 = self.BatchNorm(seq6)
+        x = self.BatchNorm(x)
 
-        seq8 = self.LeakyRelu(seq7)
+        x = self.LeakyRelu(x)
 
-        seq9 = self.zeroPad(seq8)
+        x = self.zeroPad(x)
 
-        seq10 = self.conv6(seq9)
+        x = self.conv6(x)
         # [BS, 1, 34, 34]
 
-        output = self.Sigmoid(seq10)
-        return output
+        x = self.Sigmoid(x)
+        return x
