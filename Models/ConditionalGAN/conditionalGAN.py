@@ -43,7 +43,7 @@ def preprocess(directory):
             with converted one
     """
     root = PROJECT_ROOT
-    img_root = os.fsencode(root + directory)
+    img_root = os.fsencode(f"{root}/{directory}")
     # loop through dataset dirs and subdirs
     for subdir in os.listdir(img_root):
         folder = os.path.join(img_root, subdir)
@@ -54,9 +54,9 @@ def preprocess(directory):
                 if file_path.endswith(".png"):
                     image = Image.open(file_path)
                     data = asarray(image)
-                    img = Image.fromarray(np.uint8(data)).convert('RGB')
+                    img = Image.fromarray(np.uint8(data)).convert('LA')
                     img.save(file_path)
-                    # img.show()
+                    img.show()
         except NotADirectoryError:
             # could try deleting directories with error
             print(folder, "ERROR DIRECTORY")
