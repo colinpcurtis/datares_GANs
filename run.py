@@ -1,6 +1,6 @@
 import argparse
 from Models.DCGAN import DCGAN
-from Models.ConditionalGAN import conditionalGAN
+from Models.ConditionalGAN.conditionalGAN import conditionalGAN
 
 if __name__ == "__main__":
 

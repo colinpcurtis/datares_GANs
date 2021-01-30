@@ -17,14 +17,14 @@ import numpy as np
 from PIL import Image
 
 # architectures
-from uNetGenerator import conditionalGenerator
-from uNetDiscriminator import conditionalDiscriminator
+from Models.ConditionalGAN.uNetGenerator import conditionalGenerator
+from Models.ConditionalGAN.uNetDiscriminator import conditionalDiscriminator
 
 device = device("cuda" if is_available() else "cpu")
 
 
 # model constants
-BATCH_SIZE = 256  # make batch size as big as possible on your machine until you get memory errors
+BATCH_SIZE = 64  # make batch size as big as possible on your machine until you get memory errors
 IMAGE_SIZE = 511
 CHANNELS_IMG = 3
 
@@ -148,8 +148,8 @@ class conditionalGAN:
         # train loop
         for epoch in range(self.num_epochs):
             for batch_id, (real, _) in enumerate(dataloader):
+                real = real.to(device)
                 fake = gen(real)
-                quit()
 
                 # train discriminator
                 disc_real = disc(real, real)
