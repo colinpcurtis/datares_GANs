@@ -36,6 +36,7 @@ if __name__ == "__main__":
     if args.model == "conditionalGAN":
         model = conditionalGAN(args.epochs, args.saveLogs, args.saveModel)
         model.train()
+        model.save_model(model.state_dict(), args.saveModel)
 
     if args.runPreprocess:
         preprocess(args.datasetDirectory)

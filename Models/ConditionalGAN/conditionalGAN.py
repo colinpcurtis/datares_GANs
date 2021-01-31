@@ -103,14 +103,15 @@ class conditionalGAN:
         images = ImageFolder(root=img_root, transform=self.transform())
         return images
 
-    def save_model(self, save_path):
+    def save_model(self, state_dict, save_path):
         """
             Args:
                 save_path: path from project root to save model state dict (use .pt extension)
+                state_dict: dictionary storing model params
             Returns:
                 pickle file at at path with model state dict
         """
-        save(self.state_dict, save_path)
+        save(state_dict, save_path)
 
     def train(self):
         dataset = self.dataset("/test_images")
