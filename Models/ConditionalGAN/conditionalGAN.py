@@ -54,9 +54,8 @@ def preprocess(directory):
                 if file_path.endswith(".png"):
                     image = Image.open(file_path)
                     data = asarray(image)
-                    img = Image.fromarray(np.uint8(data)).convert('LA')
+                    img = Image.fromarray(np.uint8(data)).convert('RGB')
                     img.save(file_path)
-                    img.show()
         except NotADirectoryError:
             # could try deleting directories with error
             print(folder, "ERROR DIRECTORY")
