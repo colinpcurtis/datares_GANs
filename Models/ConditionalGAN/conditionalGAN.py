@@ -24,7 +24,7 @@ device = device("cuda" if is_available() else "cpu")
 
 
 # model constants
-BATCH_SIZE = 8  # make batch size as big as possible on your machine until you get memory errors
+BATCH_SIZE = 16  # make batch size as big as possible on your machine until you get memory errors
 IMAGE_SIZE = 511
 CHANNELS_IMG = 3
 
@@ -46,6 +46,7 @@ def preprocess(directory):
     img_root = os.fsencode(f"{root}/{directory}")
     # loop through dataset dirs and subdirs
     for subdir in os.listdir(img_root):
+        print(subdir)
         folder = os.path.join(img_root, subdir)
         try:
             for file in os.listdir(folder):
@@ -54,9 +55,8 @@ def preprocess(directory):
                 if file_path.endswith(".png"):
                     image = Image.open(file_path)
                     data = asarray(image)
-                    img = Image.fromarray(np.uint8(data)).convert('LA')
+                    img = Image.fromarray(np.uint8(data)).convert('RGB')
                     img.save(file_path)
-                    img.show()
         except NotADirectoryError:
             # could try deleting directories with error
             print(folder, "ERROR DIRECTORY")
@@ -115,7 +115,7 @@ class conditionalGAN:
 
     def train(self):
         dataset = self.dataset("/test_images")
-        dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=1)
+        dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)
 
         gen = conditionalGenerator(channels_img=CHANNELS_IMG).to(device)
         disc = conditionalDiscriminator(channels_img=CHANNELS_IMG).to(device)
