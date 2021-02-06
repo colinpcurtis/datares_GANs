@@ -1,4 +1,4 @@
 #!/bin/bash
 
-unzip "*.zip" -d test_images
-rm -rf *.zip
+tar –xvzf "*.tar.gz" -d test_images
+rm -rf *.tar.gz

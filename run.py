@@ -1,6 +1,6 @@
 import argparse
 from Models.DCGAN.DCGAN import DCGAN
-from Models.ConditionalGAN.conditionalGAN import conditionalGAN, preprocess
+from Models.ConditionalGAN.conditionalGAN import conditionalGAN
 
 if __name__ == "__main__":
 
@@ -38,5 +38,3 @@ if __name__ == "__main__":
         model.train()
         model.save_model(model.state_dict(), args.saveModel)
 
-    if args.runPreprocess:
-        preprocess(args.datasetDirectory)
