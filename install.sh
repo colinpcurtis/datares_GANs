@@ -7,7 +7,7 @@ sudo apt-get autoremove
 sudo apt-get autoclean
 sudo rm -rf /usr/local/cuda*
 
-# install gcc (c++ compiler needed for cuda)
+# install gcc (c compiler needed for cuda)
 sudo apt-get gcc
 
 # install cuda 10 and drivers

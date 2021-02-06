@@ -1,5 +1,4 @@
 from torch import nn
-from torch import device
 from torch.cuda import is_available
 from torch.optim import Adam
 from torchvision.datasets import ImageFolder
@@ -7,14 +6,11 @@ import torchvision.transforms as transforms
 import torchvision
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-from torch import ones_like, zeros_like, no_grad, save
+from torch import ones_like, zeros_like, no_grad, save, device
 
 # needed to preprocess
 from config import PROJECT_ROOT
 import os
-from numpy import asarray
-import numpy as np
-from PIL import Image
 
 # architectures
 from Models.ConditionalGAN.uNetGenerator import conditionalGenerator
@@ -34,37 +30,9 @@ LAMBDA = 100  # L1 penalty
 BETAS = (0.9, 0.999)  # moving average for ADAM
 
 
-def preprocess(directory):
-    """
-        Args:
-            path from project root to image folders
-        Returns:
-            convert raw images to 8 bit RGB colors and replace raw image
-            with converted one
-    """
-    root = PROJECT_ROOT
-    img_root = os.fsencode(f"{root}/{directory}")
-    # loop through dataset dirs and subdirs
-    for subdir in os.listdir(img_root):
-        print(subdir)
-        folder = os.path.join(img_root, subdir)
-        try:
-            for file in os.listdir(folder):
-                filename = os.fsdecode(file)
-                file_path = os.path.join(os.fsdecode(folder), filename)
-                if file_path.endswith(".png"):
-                    image = Image.open(file_path)
-                    data = asarray(image)
-                    img = Image.fromarray(np.uint8(data)).convert('RGB')
-                    img.save(file_path)
-        except NotADirectoryError:
-            # could try deleting directories with error
-            print(folder, "ERROR DIRECTORY")
-
-
 class conditionalGAN:
     """
-        implements conditional GAN training
+        implements conditional GAN
     """
     def __init__(self, num_epochs, save_path_logs, save_path_model):
         """
@@ -114,6 +82,9 @@ class conditionalGAN:
         save(state_dict, save_path)
 
     def train(self):
+        """
+            Runs training session of conditional GAN
+        """
         dataset = self.dataset("/test_images")
         dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)
 
@@ -210,6 +181,3 @@ class conditionalGAN:
                         writer_disc_prob.add_scalar("disc/prob", d_x, global_step=step)
                         writer_gen_prob.add_scalar("gen/prob", d_g_x, global_step=step)
                     step += 1
-
-        # save model at end of training
-        self.save_model(self.save_path_model)
