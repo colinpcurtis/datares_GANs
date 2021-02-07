@@ -1,4 +1,7 @@
 #!/bin/bash
 
-tar –xvzf "*.tar.gz" -d test_images
-rm -rf *.tar.gz
+mkdir dataset
+ls *.gz |xargs -n1 tar -xzf
+# rm -rf *.gz
+
+

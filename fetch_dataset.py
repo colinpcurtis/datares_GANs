@@ -1,5 +1,6 @@
-import urllib.request as url
+import threading
 
+import urllib.request as url
 links = [
     'https://nihcc.box.com/shared/static/vfk49d74nhbxq3nqjg0900w5nvkorp5c.gz',
     'https://nihcc.box.com/shared/static/i28rlmbvmfjbl8p2n3ril0pptcmcu9d1.gz',
@@ -16,8 +17,19 @@ links = [
 ]
 
 
-for idx, link in enumerate(links):
+def download_file(link, idx):
     fn = 'images_%02d.tar.gz' % (idx+1)
     print('downloading'+fn+'...')
-    url.urlretrieve(link, fn)  # download the zip file
+    url.urlretrieve(link, fn)
+
+def download_thread(link, idx):
+    thread = threading.Thread(target=download_file, args=(link, idx))
+    thread.start()
+
+
+
+for idx, link in enumerate(links):
+    print("file: ", idx)
+    download_thread(link, idx)
+    
 print("Download complete. Please check the MD5 checksums")

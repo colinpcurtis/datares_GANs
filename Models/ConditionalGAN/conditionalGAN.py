@@ -11,6 +11,7 @@ from torch import ones_like, zeros_like, no_grad, save, device
 # needed to preprocess
 from config import PROJECT_ROOT
 import os
+from PIL import ImageFile
 
 # architectures
 from Models.ConditionalGAN.uNetGenerator import conditionalGenerator
@@ -23,6 +24,7 @@ device = device("cuda" if is_available() else "cpu")
 BATCH_SIZE = 16  # make batch size as big as possible on your machine until you get memory errors
 IMAGE_SIZE = 511
 CHANNELS_IMG = 3
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 # hyperparameters
 LEARNING_RATE = 1e-3
@@ -85,7 +87,7 @@ class conditionalGAN:
         """
             Runs training session of conditional GAN
         """
-        dataset = self.dataset("/test_images")
+        dataset = self.dataset("/images")
         dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)
 
         gen = conditionalGenerator(channels_img=CHANNELS_IMG).to(device)
