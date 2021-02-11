@@ -22,14 +22,14 @@ device = device("cuda" if is_available() else "cpu")
 
 
 # model constants
-BATCH_SIZE = 100  # make batch size as big as possible on your machine until you get memory errors
+BATCH_SIZE = 3  # make batch size as big as possible on your machine until you get memory errors
 IMAGE_SIZE = 511
 CHANNELS_IMG = 3
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 # hyperparameters
 LEARNING_RATE = 1e-4
-LAMBDA = 100  # L1 penalty
+LAMBDA = 10  # L1 penalty
 BETAS = (0.9, 0.999)  # moving average for ADAM
 
 
