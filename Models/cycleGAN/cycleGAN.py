@@ -6,7 +6,7 @@ import torchvision.transforms as transforms
 import torchvision
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-from torch import ones_like, no_grad, save, device, mean, abs
+from torch import ones_like, zeros_like, no_grad, save, device, mean, abs
 
 # needed to preprocess
 from config import PROJECT_ROOT
@@ -86,7 +86,7 @@ class cycleGAN:
                 sum of losses for real and fake results
         """
         real_loss = loss_fn(real, ones_like(real).detach())
-        gen_loss = loss_fn(generated, ones_like(generated).detach())
+        gen_loss = loss_fn(generated, zeros_like(generated).detach())
         return real_loss + gen_loss
 
     def generator_loss(self, loss_fn, generated):
@@ -247,9 +247,11 @@ class cycleGAN:
                 # backpropagate gradients
                 genG_optimizer.step()
                 genF_optimizer.step()
-
-                discG_optimizer.step()
-                discF_optimizer.step()
+                # only update disc if gen has gotten stronger
+                if loss_discG > .5:
+                    discG_optimizer.step()
+                if loss_discF > .5:
+                    discF_optimizer.step()
 
                 if batch_id % 10 == 0:
                     print(f"epoch: {epoch}/{self.num_epochs} "
