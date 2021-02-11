@@ -6,7 +6,7 @@ import torchvision.transforms as transforms
 import torchvision
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-from torch import ones_like, no_grad, save, device, mean, abs
+from torch import ones_like, no_grad, save, device, mean, abs, std, randn
 
 # needed to preprocess
 from config import PROJECT_ROOT
@@ -21,7 +21,7 @@ device = device("cuda" if is_available() else "cpu")
 
 
 # model constants
-BATCH_SIZE = 3  # make batch size as big as possible on your machine until you get memory errors
+BATCH_SIZE = 100  # make batch size as big as possible on your machine until you get memory errors
 IMAGE_SIZE = 511
 CHANNELS_IMG = 3
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -30,6 +30,18 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 LEARNING_RATE = 1e-4
 LAMBDA = 100  # L1 penalty
 BETAS = (0.9, 0.999)  # moving average for ADAM
+
+
+class AddGaussianNoise(object):
+    def __init__(self, mean=0., std=1.):
+        self.std = std
+        self.mean = mean
+
+    def __call__(self, tensor):
+        return tensor + randn(tensor.size()) * self.std + self.mean
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
 
 
 class cycleGAN:
@@ -48,7 +60,7 @@ class cycleGAN:
         self.save_path_model = save_path_model
         self.dataset_dir = dataset_dir
 
-    def transform(self):
+    def transform(self, img_mean, img_std):
         """
             Args:
                 self
@@ -58,8 +70,9 @@ class cycleGAN:
         # TODO: calculate mean and std of data
         data_transforms = transforms.Compose([transforms.Resize(IMAGE_SIZE),
                                               transforms.ToTensor(),
-                                              transforms.Normalize([0.5 for _ in range(CHANNELS_IMG)],
-                                                                   [0.5 for _ in range(CHANNELS_IMG)])])
+                                              transforms.Normalize([img_mean for _ in range(CHANNELS_IMG)],
+                                                                   [img_std for _ in range(CHANNELS_IMG)]),
+                                              AddGaussianNoise(img_mean, .05)])
         return data_transforms
 
     def dataset(self, directory: str):
@@ -72,8 +85,8 @@ class cycleGAN:
         root = PROJECT_ROOT
         img_root = os.fsdecode(root + directory)
         # imagesA = ImageFolder(root=f"{img_root}", transform=self.transform())
-        imagesA = ImageFolder(root=f"{img_root}/imsA/", transform=self.transform())
-        imagesB = ImageFolder(root=f"{img_root}/imsB/", transform=self.transform())
+        imagesA = ImageFolder(root=f"{img_root}/imsA/", transform=self.transform(.511, .227))
+        imagesB = ImageFolder(root=f"{img_root}/imsB/", transform=self.transform(.413, .262))
         return imagesA, imagesB
 
     def discriminator_loss(self, loss_fn, real, generated):
