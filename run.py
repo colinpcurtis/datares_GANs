@@ -1,6 +1,7 @@
 import argparse
 from Models.DCGAN.DCGAN import DCGAN
 from Models.ConditionalGAN.conditionalGAN import conditionalGAN
+from Models.cycleGAN.cycleGAN import cycleGAN
 
 if __name__ == "__main__":
 
@@ -35,6 +36,11 @@ if __name__ == "__main__":
 
     if args.model == "conditionalGAN":
         model = conditionalGAN(args.epochs, args.saveLogs, args.saveModel)
+        model.train()
+        model.save_model(model.state_dict(), args.saveModel)
+
+    if args.model == "cycleGAN":
+        model = cycleGAN(args.epochs, args.saveLogs, args.saveModel, args.datasetDirectory)
         model.train()
         model.save_model(model.state_dict(), args.saveModel)
 

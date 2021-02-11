@@ -21,7 +21,7 @@ device = device("cuda" if is_available() else "cpu")
 
 
 # model constants
-BATCH_SIZE = 16  # make batch size as big as possible on your machine until you get memory errors
+BATCH_SIZE = 1  # make batch size as big as possible on your machine until you get memory errors
 IMAGE_SIZE = 511
 CHANNELS_IMG = 3
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -36,7 +36,7 @@ class cycleGAN:
     """
         implements conditional GAN
     """
-    def __init__(self, num_epochs, save_path_logs, save_path_model):
+    def __init__(self, num_epochs, save_path_logs, save_path_model, dataset_dir):
         """
             Args:
                 num_epochs: number of epochs to train model
@@ -46,6 +46,7 @@ class cycleGAN:
         self.num_epochs = num_epochs
         self.save_path_logs = save_path_logs
         self.save_path_model = save_path_model
+        self.dataset_dir = dataset_dir
 
     def transform(self):
         """
@@ -70,8 +71,10 @@ class cycleGAN:
         """
         root = PROJECT_ROOT
         img_root = os.fsdecode(root + directory)
-        images = ImageFolder(root=img_root, transform=self.transform())
-        return images
+        # imagesA = ImageFolder(root=f"{img_root}", transform=self.transform())
+        imagesA = ImageFolder(root=f"{img_root}/imsA/", transform=self.transform())
+        imagesB = ImageFolder(root=f"{img_root}/imsB/", transform=self.transform())
+        return imagesA, imagesB
 
     def discriminator_loss(self, loss_fn, real, generated):
         """
@@ -112,7 +115,7 @@ class cycleGAN:
                 real_im: real image, eg (A)
                 same_im: image passed through generator, eg G(A)
             Returns:
-                L1 norm between real_im and same_im , want generated image to be close to original
+                L1 norm between real_im and same_im, promotes feature matching for generator
         """
         return mean(abs(real_im - same_im))
 
@@ -130,8 +133,11 @@ class cycleGAN:
         """
             Runs training session of cycle GAN
         """
-        dataset = self.dataset("/images")
-        dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)
+        # A is paintings, B is photos
+        imagesA, imagesB = self.dataset(self.dataset_dir)
+
+        dataloader1 = DataLoader(imagesA, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)
+        dataloader2 = DataLoader(imagesB, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)
 
         # generator G learns mapping G: A -> B
         genG = conditionalGenerator(channels_img=CHANNELS_IMG).to(device)
@@ -143,16 +149,17 @@ class cycleGAN:
         # discriminator F differentiates between B and G(A)
         discF = cycleDiscriminator(channels_img=CHANNELS_IMG).to(device)
 
-        writer_real = SummaryWriter(f"logs/{self.save_path_logs}/real")
-        writer_fake = SummaryWriter(f"logs/{self.save_path_logs}/fake")
+        writer_realA = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/A/real")
+        writer_fakeA = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/A/fake")
 
-        writer_disc_loss = SummaryWriter(f"logs/{self.save_path_logs}/disc/loss")  # track disc and gen loss
-        writer_gen_loss = SummaryWriter(f"logs/{self.save_path_logs}/gen/loss")
+        writer_realB = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/B/real")
+        writer_fakeB = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/B/fake")
 
-        writer_disc_prob = SummaryWriter(f"logs/{self.save_path_logs}/disc/prob")
-        # track D(x)  - probability of classifying real image as real
-        writer_gen_prob = SummaryWriter(f"logs/{self.save_path_logs}/gen/prob")
-        # track D(G(x)) - probability of classifying fake image as real
+        writer_disc_lossG = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/disc/lossG")  # track disc and gen loss
+        writer_gen_lossG = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/gen/lossG")
+
+        writer_disc_lossF = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/disc/lossF")  # track disc and gen loss
+        writer_gen_lossF = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/gen/lossF")
 
         # TODO: add LR scheduler
         genG_optimizer = Adam(genG.parameters(), lr=LEARNING_RATE, betas=BETAS)
@@ -172,9 +179,13 @@ class cycleGAN:
         step = 0
         # train loop
         for epoch in range(self.num_epochs):
-            for batch_id, (imageA_real, imageB_real) in enumerate(dataloader):
-                imageA_real = imageA_real.to(device)
-                imageB_real = imageB_real.to(device)
+            for batch_id, (imageA_real, imageB_real) in enumerate(zip(dataloader1, dataloader2)):
+                if min(len(dataloader2), len(dataloader1)) <= batch_id:
+                    # the dataloaders are not the same size
+                    break
+                # zip concats to list of lists, so need to unpack to get raw tensors
+                imageA_real = imageA_real[0].to(device)
+                imageB_real = imageB_real[0].to(device)
 
                 # forward generator
                 imageB_fake = genG(imageA_real)
@@ -201,8 +212,8 @@ class cycleGAN:
 
                 # calculate BCE between real images and what it should output (a vector of ones)
                 # and the fake images and what it should output (a vector of zeroes)
-                loss_discA = self.discriminator_loss(loss, discA_fake, discA_real)
-                loss_discB = self.discriminator_loss(loss, discB_fake, discB_real)
+                loss_discG = self.discriminator_loss(loss, discA_fake, discA_real)
+                loss_discF = self.discriminator_loss(loss, discB_fake, discB_real)
 
                 # generator loss
                 genG_loss = self.generator_loss(loss, discA_fake)
@@ -226,8 +237,8 @@ class cycleGAN:
                 total_genG_loss.backward(retain_graph=True)
                 total_genF_loss.backward(retain_graph=True)
 
-                loss_discA.backward(retain_graph=True)
-                loss_discB.backward(retain_graph=True)
+                loss_discG.backward(retain_graph=True)
+                loss_discF.backward(retain_graph=True)
 
                 # backpropagate gradients
                 genG_optimizer.step()
@@ -236,22 +247,37 @@ class cycleGAN:
                 discG_optimizer.step()
                 discF_optimizer.step()
 
-                # if batch_id % 100 == 0:
-                #     print(f"epoch: {epoch}/{self.num_epochs} batch: {batch_id}/{len(dataloader)} "
-                #           f"loss D: {total_disc_loss:.4f} loss G: {total_gen_loss:.4f} "
-                #           f"D(G(x)): {d_g_x:.4f} D(x): {d_x:.4f}")
-                #
-                #     with no_grad():
-                #         # plot generated and real images
-                #         img_grid_real = torchvision.utils.make_grid(imageA[:64], normalize=True)
-                #         img_grid_fake = torchvision.utils.make_grid(fake[:64], normalize=True)
-                #
-                #         writer_real.add_image("Ground Truth", img_grid_real, global_step=step)
-                #         writer_fake.add_image("Generated", img_grid_fake, global_step=step)
-                #
-                #         writer_disc_loss.add_scalar("disc/loss", total_disc_loss, global_step=step)
-                #         writer_gen_loss.add_scalar("gen/loss", total_gen_loss, global_step=step)
-                #
-                #         writer_disc_prob.add_scalar("disc/prob", d_x, global_step=step)
-                #         writer_gen_prob.add_scalar("gen/prob", d_g_x, global_step=step)
-                #     step += 1
+                if batch_id % 2 == 0:
+                    print(f"epoch: {epoch}/{self.num_epochs} "
+                          f"batch: {batch_id}/{min(len(dataloader1), len(dataloader2))} "
+                          f"disc loss G: {loss_discG:.4f} disc loss F: {loss_discF:.4f} "
+                          f"gen loss G: {total_genG_loss:.4f} gen loss F: {total_genF_loss:.4f}")
+
+                    with no_grad():
+                        # plot generated and real images
+                        img_grid_realA = torchvision.utils.make_grid(imageA_real[:16], normalize=True)
+                        img_grid_fakeA = torchvision.utils.make_grid(imageA_fake[:16], normalize=True)
+
+                        img_grid_realB = torchvision.utils.make_grid(imageB_real[:16], normalize=True)
+                        img_grid_fakeB = torchvision.utils.make_grid(imageB_fake[:16], normalize=True)
+
+                        writer_realA.add_image("Ground Truth A", img_grid_realA, global_step=step)
+                        writer_fakeA.add_image("Generated A", img_grid_fakeA, global_step=step)
+
+                        writer_realB.add_image("Ground Truth B", img_grid_realB, global_step=step)
+                        writer_fakeB.add_image("Generated B", img_grid_fakeB, global_step=step)
+
+                        writer_disc_lossG.add_scalar("disc/lossDiscG", loss_discG, global_step=step)
+                        writer_gen_lossG.add_scalar("gen/lossGenG", total_genG_loss, global_step=step)
+
+                        writer_disc_lossF.add_scalar("disc/lossDiscF", loss_discF, global_step=step)
+                        writer_gen_lossF.add_scalar("gen/lossGenF", total_genF_loss, global_step=step)
+
+                    step += 1
+
+
+if __name__ == "__main__":
+    # simple testing script
+    gan = cycleGAN(1, "/logsTest", None, "/monet2photo")
+    gan.train()
+

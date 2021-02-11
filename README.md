@@ -33,24 +33,17 @@ TensorBoard results can be accessed by running ```tensorboard --logdir ./logs```
 
 It is recommended to download the logs file locally and then run TensorBoard so as not to waste expensive GPU time.
 
-### Running the Conditional GAN
-The main goal of this repository is to implement a conditional GAN for image segmentation on a medical dataset
-of roughly 30,000 CT scans.  The dataset originates from the following NIH link 
-[https://nihcc.app.box.com/v/DeepLesion/folder/50715173939](https://nihcc.app.box.com/v/DeepLesion/folder/50715173939).
+### Running the Conditional and Cycle GAN
 
 #### Fetching the dataset 
 Run ```python3 fetch_dataset.py```.  Only roughly a quarter of the entire dataset will be downloaded since the other 
 links are commented out.  This will speed up the initial testing until a whole run is executed.  Then run 
 ```./unzip.sh``` to unzip the compressed files and remove the Zip files.
 
-#### Preprocessing
-Run ```python3 run.py -p True -d dataset``` to convert the compressed raw images into an RGB Pillow image.  This
-preprocessing and fetching step should take no longer than an hour.
-
 #### Training
-The ```python3 run.py -m conditionalGAN -e 10 -l logs -s modelFile.pt``` command will run the Conditional GAN for 10 epochs, 
-save the results to the ```/logs``` direcory, and save the model state dict as ```modelFile.pt``` in the project root
-directory.
+The ```python3 run.py -m conditionalGAN -e 10 -l logs -s modelFile.pt -d monet2photo``` command will run the Conditional GAN for 10 epochs, 
+save the results to the ```/logs``` directory, and save the model state dict as ```modelFile.pt``` in the project root
+directory.  We specify to train the model on the ```monet2photo``` dataset directory.  
 
 In a new terminal window, run ```tensorboard --logdir ./logs``` to open the TensorBoard logs.  This has to be 
 port forwarded if in a virtual machine, so run ```gcloud compute ssh [INSTANCE_NAME] -- -NfL 6006:localhost:6006```
