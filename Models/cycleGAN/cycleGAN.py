@@ -21,13 +21,13 @@ device = device("cuda" if is_available() else "cpu")
 
 
 # model constants
-BATCH_SIZE = 1  # make batch size as big as possible on your machine until you get memory errors
+BATCH_SIZE = 3  # make batch size as big as possible on your machine until you get memory errors
 IMAGE_SIZE = 511
 CHANNELS_IMG = 3
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 # hyperparameters
-LEARNING_RATE = 1e-3
+LEARNING_RATE = 1e-4
 LAMBDA = 100  # L1 penalty
 BETAS = (0.9, 0.999)  # moving average for ADAM
 
@@ -136,8 +136,8 @@ class cycleGAN:
         # A is paintings, B is photos
         imagesA, imagesB = self.dataset(self.dataset_dir)
 
-        dataloader1 = DataLoader(imagesA, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)
-        dataloader2 = DataLoader(imagesB, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)
+        dataloader1 = DataLoader(imagesA, batch_size=BATCH_SIZE, shuffle=True, num_workers=3)
+        dataloader2 = DataLoader(imagesB, batch_size=BATCH_SIZE, shuffle=True, num_workers=3)
 
         # generator G learns mapping G: A -> B
         genG = conditionalGenerator(channels_img=CHANNELS_IMG).to(device)
@@ -168,7 +168,7 @@ class cycleGAN:
         genF_optimizer = Adam(genF.parameters(), lr=LEARNING_RATE, betas=BETAS)
         discF_optimizer = Adam(discF.parameters(), lr=LEARNING_RATE, betas=BETAS)
 
-        loss = nn.BCELoss()
+        loss = nn.BCEWithLogitsLoss()
 
         genG.train()
         discG.train()
@@ -223,8 +223,8 @@ class cycleGAN:
                 cycle_loss = self.cycle_loss(imageA_real, cycleA) + self.cycle_loss(imageB_real, cycleB)
 
                 # total losses
-                total_genG_loss = genG_loss + cycle_loss + self.identity_loss(imageA_real, sameA)
-                total_genF_loss = genF_loss + cycle_loss + self.identity_loss(imageB_real, sameB)
+                total_genG_loss = genG_loss + (LAMBDA * cycle_loss) +(LAMBDA * self.identity_loss(imageA_real, sameA))
+                total_genF_loss = genF_loss + (LAMBDA * cycle_loss) + (LAMBDA * self.identity_loss(imageB_real, sameB))
 
                 # zero gradients before backward
                 genG.zero_grad()
@@ -247,7 +247,7 @@ class cycleGAN:
                 discG_optimizer.step()
                 discF_optimizer.step()
 
-                if batch_id % 2 == 0:
+                if batch_id % 10 == 0:
                     print(f"epoch: {epoch}/{self.num_epochs} "
                           f"batch: {batch_id}/{min(len(dataloader1), len(dataloader2))} "
                           f"disc loss G: {loss_discG:.4f} disc loss F: {loss_discF:.4f} "

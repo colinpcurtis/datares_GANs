@@ -15,7 +15,6 @@ class cycleDiscriminator(nn.Module):
         self.BatchNorm = nn.BatchNorm2d(num_features=512)
         self.LeakyRelu = nn.LeakyReLU()
         self.conv6 = nn.Conv2d(in_channels=512, out_channels=1, kernel_size=4, stride=1)
-        self.Sigmoid = nn.Sigmoid()
 
     def _block(self, in_channels, out_channels, kernel, stride, batchnorm=True):
         # conv -> batch norm -> leaky relu
@@ -60,6 +59,4 @@ class cycleDiscriminator(nn.Module):
 
         x = self.conv6(x)
         # [BS, 1, 34, 34]
-
-        x = self.Sigmoid(x)
         return x
