@@ -168,7 +168,11 @@ class cycleGAN:
         genF_optimizer = Adam(genF.parameters(), lr=LEARNING_RATE, betas=BETAS)
         discF_optimizer = Adam(discF.parameters(), lr=LEARNING_RATE, betas=BETAS)
 
-        loss = nn.BCEWithLogitsLoss()
+        lossDiscG = nn.BCEWithLogitsLoss()
+        lossDiscF = nn.BCEWithLogitsLoss()
+
+        lossGenG = nn.BCEWithLogitsLoss()
+        lossGenF = nn.BCEWithLogitsLoss()
 
         genG.train()
         discG.train()
@@ -212,18 +216,18 @@ class cycleGAN:
 
                 # calculate BCE between real images and what it should output (a vector of ones)
                 # and the fake images and what it should output (a vector of zeroes)
-                loss_discG = self.discriminator_loss(loss, discA_fake, discA_real)
-                loss_discF = self.discriminator_loss(loss, discB_fake, discB_real)
+                loss_discG = self.discriminator_loss(lossDiscG, discA_fake, discA_real)
+                loss_discF = self.discriminator_loss(lossDiscF, discB_fake, discB_real)
 
                 # generator loss
-                genG_loss = self.generator_loss(loss, discA_fake)
-                genF_loss = self.generator_loss(loss, discB_fake)
+                genG_loss = self.generator_loss(lossGenG, discA_fake)
+                genF_loss = self.generator_loss(lossGenF, discB_fake)
 
                 # cycle loss -> feature matching
                 cycle_loss = self.cycle_loss(imageA_real, cycleA) + self.cycle_loss(imageB_real, cycleB)
 
                 # total losses
-                total_genG_loss = genG_loss + (LAMBDA * cycle_loss) +(LAMBDA * self.identity_loss(imageA_real, sameA))
+                total_genG_loss = genG_loss + (LAMBDA * cycle_loss) + (LAMBDA * self.identity_loss(imageA_real, sameA))
                 total_genF_loss = genF_loss + (LAMBDA * cycle_loss) + (LAMBDA * self.identity_loss(imageB_real, sameB))
 
                 # zero gradients before backward
@@ -278,6 +282,6 @@ class cycleGAN:
 
 if __name__ == "__main__":
     # simple testing script
-    gan = cycleGAN(1, "/logsTest", None, "/monet2photo")
+    gan = cycleGAN(1, None, None, "/monet2photo")
     gan.train()
 
