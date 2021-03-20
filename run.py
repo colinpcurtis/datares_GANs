@@ -2,6 +2,7 @@ import argparse
 from Models.DCGAN.DCGAN import DCGAN
 from Models.ConditionalGAN.conditionalGAN import conditionalGAN
 from Models.cycleGAN.cycleGAN import cycleGAN
+from torch import save
 
 if __name__ == "__main__":
 
@@ -22,9 +23,6 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--saveModel", action="store", help="save state dict path",
                         type=str, required=False)
 
-    parser.add_argument("-p", "--runPreprocess", action="store", help="run the preprocessing script",
-                        type=bool, required=False)
-
     parser.add_argument("-d", "--datasetDirectory", action="store", help="directory of images for preprocessing",
                         type=str, required=False)
 
@@ -37,10 +35,9 @@ if __name__ == "__main__":
     if args.model == "conditionalGAN":
         model = conditionalGAN(args.epochs, args.saveLogs, args.saveModel)
         model.train()
-        model.save_model(model.state_dict(), args.saveModel)
+        save(model.state_dict(), args.saveModel)
 
     if args.model == "cycleGAN":
         model = cycleGAN(args.epochs, args.saveLogs, args.saveModel, args.datasetDirectory)
         model.train()
-        model.save_model(model.state_dict(), args.saveModel)
-
+        save(model.state_dict(), args.saveModel)

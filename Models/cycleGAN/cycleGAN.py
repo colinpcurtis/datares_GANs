@@ -46,9 +46,6 @@ class AddGaussianNoise(object):
 
 
 class cycleGAN:
-    """
-        implements conditional GAN
-    """
     def __init__(self, num_epochs, save_path_logs, save_path_model, dataset_dir):
         """
             Args:
@@ -294,10 +291,3 @@ class cycleGAN:
                         writer_gen_lossF.add_scalar("gen/lossGenF", total_genF_loss, global_step=step)
 
                     step += 1
-
-
-if __name__ == "__main__":
-    # simple testing script
-    gan = cycleGAN(1, None, None, "/monet2photo")
-    gan.train()
-
