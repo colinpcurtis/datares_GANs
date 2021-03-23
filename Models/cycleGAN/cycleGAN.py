@@ -1,12 +1,12 @@
 from torch import nn
 from torch.cuda import is_available
 from torch.optim import Adam
+from torch.optim.lr_scheduler import StepLR
 from torchvision.datasets import ImageFolder
 import torchvision.transforms as transforms
 import torchvision
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-
 from torch import ones_like, zeros_like, no_grad, save, device, mean, abs, randn
 
 # needed to preprocess
@@ -18,22 +18,26 @@ from PIL import ImageFile
 from Models.ConditionalGAN.uNetGenerator import conditionalGenerator
 from Models.cycleGAN.cycleDiscriminator import cycleDiscriminator
 
-device = device("cuda" if is_available() else "cpu")
-
-
 # model constants
 BATCH_SIZE = 3  # make batch size as big as possible on your machine until you get memory errors
 IMAGE_SIZE = 511
 CHANNELS_IMG = 3
 ImageFile.LOAD_TRUNCATED_IMAGES = True
+device = device("cuda" if is_available() else "cpu")
 
 # hyperparameters
-LEARNING_RATE = 1e-4
+LEARNING_RATE = 1e-2
 LAMBDA = 10  # L1 penalty
 BETAS = (0.9, 0.999)  # moving average for ADAM
+GAUSSIAN_NOISE_STD = .05
+SCHEDULER_STEP_SIZE = 20
+GAMMA = 0.1
 
 
 class AddGaussianNoise(object):
+    """
+        Add gaussian noise with specified mean and standard deviation to an input tensor
+    """
     def __init__(self, mean=0., std=1.):
         self.std = std
         self.mean = mean
@@ -70,7 +74,7 @@ class cycleGAN:
                                               transforms.ToTensor(),
                                               transforms.Normalize([img_mean for _ in range(CHANNELS_IMG)],
                                                                    [img_std for _ in range(CHANNELS_IMG)]),
-                                              AddGaussianNoise(img_mean, .05)])
+                                              AddGaussianNoise(img_mean, GAUSSIAN_NOISE_STD)])
         return data_transforms
 
     def dataset(self, directory: str):
@@ -82,7 +86,6 @@ class cycleGAN:
         """
         root = PROJECT_ROOT
         img_root = os.fsdecode(root + directory)
-        # imagesA = ImageFolder(root=f"{img_root}", transform=self.transform())
         imagesA = ImageFolder(root=f"{img_root}/imsA/", transform=self.transform(.511, .227))
         imagesB = ImageFolder(root=f"{img_root}/imsB/", transform=self.transform(.413, .262))
         return imagesA, imagesB
@@ -130,15 +133,14 @@ class cycleGAN:
         """
         return mean(abs(real_im - same_im))
 
-    def save_model(self, state_dict, save_path):
+    def save_model(self, save_path):
         """
             Args:
                 save_path: path from project root to save model state dict (use .pt extension)
-                state_dict: dictionary storing model params
             Returns:
                 pickle file at at path with model state dict
         """
-        save(state_dict, save_path)
+        save(self.state_dict(), save_path)
 
     def train(self):
         """
@@ -172,22 +174,25 @@ class cycleGAN:
         writer_disc_lossF = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/disc/lossF")  # track disc and gen loss
         writer_gen_lossF = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/gen/lossF")
 
-        # TODO: add LR scheduler
+        # optimizers
         genG_optimizer = Adam(genG.parameters(), lr=LEARNING_RATE, betas=BETAS)
         discG_optimizer = Adam(discG.parameters(), lr=LEARNING_RATE, betas=BETAS)
-
         genF_optimizer = Adam(genF.parameters(), lr=LEARNING_RATE, betas=BETAS)
         discF_optimizer = Adam(discF.parameters(), lr=LEARNING_RATE, betas=BETAS)
 
+        # LR schedulers for corresponding optimizers
+        genG_scheduler = StepLR(genG_optimizer, step_size=SCHEDULER_STEP_SIZE, gamma=GAMMA)
+        genF_scheduler = StepLR(genF_optimizer, step_size=SCHEDULER_STEP_SIZE, gamma=GAMMA)
+        discG_scheduler = StepLR(discG_optimizer, step_size=SCHEDULER_STEP_SIZE, gamma=GAMMA)
+        discF_scheduler = StepLR(discF_optimizer, step_size=SCHEDULER_STEP_SIZE, gamma=GAMMA)
+
         lossDiscG = nn.BCEWithLogitsLoss()
         lossDiscF = nn.BCEWithLogitsLoss()
-
         lossGenG = nn.BCEWithLogitsLoss()
         lossGenF = nn.BCEWithLogitsLoss()
 
         genG.train()
         discG.train()
-
         genF.train()
         discF.train()
 
@@ -221,10 +226,6 @@ class cycleGAN:
                 discA_fake = discF(imageA_fake)
                 discB_fake = discG(imageB_fake)
 
-                # get probability that discriminator predicts real image as real
-                # imageA_prob = discG_pred.mean().item()
-                # imageB_prob = discF_pred.mean().item()
-
                 # calculate BCE between real images and what it should output (a vector of ones)
                 # and the fake images and what it should output (a vector of zeroes)
                 loss_discG = self.discriminator_loss(lossDiscG, discA_fake, discA_real)
@@ -256,13 +257,13 @@ class cycleGAN:
                 loss_discF.backward(retain_graph=True)
 
                 # backpropagate gradients
-                genG_optimizer.step()
-                genF_optimizer.step()
+                genG_scheduler.step()
+                genF_scheduler.step()
                 # only update disc if gen has gotten stronger
-                if loss_discG > .5:
-                    discG_optimizer.step()
-                if loss_discF > .5:
-                    discF_optimizer.step()
+                # if loss_discG > .5:
+                discG_scheduler.step()
+                # if loss_discF > .5:
+                discF_scheduler.step()
 
                 if batch_id % 10 == 0:
                     print(f"epoch: {epoch}/{self.num_epochs} "
