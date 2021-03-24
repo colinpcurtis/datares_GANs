@@ -35,7 +35,9 @@ It is recommended to download the logs file locally and then run TensorBoard so 
 ### Running the Conditional and Cycle GAN
 
 #### Fetching the dataset 
-Run ```python3 fetch_dataset.py```.  This downloads and unzips the dataset zip files into the ```/datasets``` directory.
+Run ```python3 fetch_dataset.py```.  This downloads and unzips the dataset zip files into the ```/datasets``` directory.   
+Then run ```./move.sh``` to move the dataset into a format so that the PyTorch dataset class can read 
+the images.  
 
 #### Training
 The ```python3 run.py -m cycleGAN -e 10 -l logs -s modelFile.pt -d monet2photo``` command will run the Conditional GAN for 10 epochs, 
