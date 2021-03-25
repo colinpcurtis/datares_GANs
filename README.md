@@ -40,9 +40,8 @@ Then run ```./move.sh``` to move the dataset into a format so that the PyTorch d
 the images.  
 
 #### Training
-The ```python3 run.py -m cycleGAN -e 10 -l logs -s modelFile.pt -d monet2photo``` command will run the Conditional GAN for 10 epochs, 
-save the results to the ```/logs``` directory, and save the model state dict as ```modelFile.pt``` in the project root
-directory.  We specify to train the model on the ```monet2photo``` dataset directory.  
+There are numerous command line arguments to run the model.  For simplicity purposes they can be found and changed in 
+the ```Makefile```.  To run the model, simply invoke the ```make``` command and training will start.  
 
 In a new terminal window, run ```tensorboard --logdir ./logs``` to open the TensorBoard logs.  This has to be 
 port forwarded if in a virtual machine, so run ```gcloud compute ssh [INSTANCE_NAME] -- -NfL 6006:localhost:6006```
