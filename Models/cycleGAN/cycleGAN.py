@@ -7,7 +7,7 @@ import torchvision.transforms as transforms
 import torchvision
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-from torch import ones_like, zeros_like, no_grad, save, device, mean, abs, randn
+from torch import ones_like, zeros_like, no_grad, save, device, mean, abs, randn, randn_like
 
 # needed to preprocess
 from config import PROJECT_ROOT
@@ -220,11 +220,11 @@ class cycleGAN:
                 sameB = genF(imageB_real)
 
                 # forward discriminator
-                discA_real = discF(imageA_real)
-                discB_real = discG(imageB_real)
+                discA_real = discF(imageA_real + randn_like(imageA_real))
+                discB_real = discG(imageB_real + randn_like(imageB_real))
 
-                discA_fake = discF(imageA_fake)
-                discB_fake = discG(imageB_fake)
+                discA_fake = discF(imageA_fake + randn_like(imageA_fake))
+                discB_fake = discG(imageB_fake + randn_like(imageB_fake))
 
                 # calculate BCE between real images and what it should output (a vector of ones)
                 # and the fake images and what it should output (a vector of zeroes)
