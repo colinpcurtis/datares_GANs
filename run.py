@@ -35,9 +35,7 @@ if __name__ == "__main__":
     if args.model == "conditionalGAN":
         model = conditionalGAN(args.epochs, args.saveLogs, args.saveModel)
         model.train()
-        save(model.state_dict(), args.saveModel)
 
     if args.model == "cycleGAN":
         model = cycleGAN(args.epochs, args.saveLogs, args.saveModel, args.datasetDirectory)
         model.train()
-        save(model.state_dict(), args.saveModel)

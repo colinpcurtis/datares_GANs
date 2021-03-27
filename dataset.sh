@@ -2,8 +2,8 @@
 
 FILE=$1
 
-if [[$FILE != "horse2zebra" && $FILE != "monet2photo" && $FILE != "cezanne2photo"
-      && $FILE != "ukiyoe2photo" && $FILE != "vangogh2photo"; then
+if [ $FILE != "horse2zebra" && $FILE != "monet2photo" && $FILE != "cezanne2photo"
+      && $FILE != "ukiyoe2photo" && $FILE != "vangogh2photo" ]; then
     echo "Incorrect dataset"
     exit 1
 fi

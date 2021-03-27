@@ -133,21 +133,21 @@ class cycleGAN:
         """
         return mean(abs(real_im - same_im))
 
-    def save_model(self, save_path):
+    def save_model(self, model, save_path):
         """
             Args:
                 save_path: path from project root to save model state dict (use .pt extension)
             Returns:
                 pickle file at at path with model state dict
         """
-        save(self.state_dict(), save_path)
+        save(model.state_dict(), save_path)
 
     def train(self):
         """
             Runs training session of cycle GAN
         """
         # A is paintings, B is photos
-        imagesA, imagesB = self.dataset(self.dataset_dir)
+        imagesA, imagesB = self.dataset("/datasets" + self.dataset_dir)
 
         dataloader1 = DataLoader(imagesA, batch_size=BATCH_SIZE, shuffle=True, num_workers=3)
         dataloader2 = DataLoader(imagesB, batch_size=BATCH_SIZE, shuffle=True, num_workers=3)
@@ -292,3 +292,6 @@ class cycleGAN:
                         writer_gen_lossF.add_scalar("gen/lossGenF", total_genF_loss, global_step=step)
 
                     step += 1
+
+        # save generator from photos to paintings at end of training
+        self.save_model(genF, self.save_path_model)
