@@ -75,7 +75,7 @@ class cycleGAN:
                                               transforms.ToTensor(),
                                               transforms.Normalize([img_mean for _ in range(CHANNELS_IMG)],
                                                                    [img_std for _ in range(CHANNELS_IMG)]),
-                                              AddGaussianNoise(img_mean, GAUSSIAN_NOISE_STD)])
+                                              AddGaussianNoise(0, GAUSSIAN_NOISE_STD)])
         return data_transforms
 
     def dataset(self, directory: str):
@@ -198,6 +198,10 @@ class cycleGAN:
         discF.train()
 
         step = 0
+        genG_losses = []  # track moving average losses over 10 mini batches
+        genF_losses = []
+        discG_losses = []
+        discF_losses = []
         # train loop
         for epoch in range(self.num_epochs):
             for batch_id, (imageA_real, imageB_real) in enumerate(zip(dataloader1, dataloader2)):
@@ -231,6 +235,8 @@ class cycleGAN:
                 # and the fake images and what it should output (a vector of zeroes)
                 loss_discG = self.discriminator_loss(lossDiscG, discA_fake, discA_real)
                 loss_discF = self.discriminator_loss(lossDiscF, discB_fake, discB_real)
+                discF_losses.append(loss_discF)
+                discG_losses.append(loss_discG)
 
                 # generator loss
                 genG_loss = self.generator_loss(lossGenG, discA_fake)
@@ -242,6 +248,9 @@ class cycleGAN:
                 # total losses
                 total_genG_loss = genG_loss + (LAMBDA * cycle_loss) + (LAMBDA * self.identity_loss(imageA_real, sameA))
                 total_genF_loss = genF_loss + (LAMBDA * cycle_loss) + (LAMBDA * self.identity_loss(imageB_real, sameB))
+
+                genF_losses.append(total_genF_loss)
+                genG_losses.append(total_genG_loss)
 
                 # zero gradients before backward
                 genG.zero_grad()
@@ -269,8 +278,15 @@ class cycleGAN:
                 if batch_id % 10 == 0:
                     print(f"epoch: {epoch}/{self.num_epochs} "
                           f"batch: {batch_id}/{min(len(dataloader1), len(dataloader2))} "
-                          f"disc loss G: {loss_discG:.4f} disc loss F: {loss_discF:.4f} "
-                          f"gen loss G: {total_genG_loss:.4f} gen loss F: {total_genF_loss:.4f}")
+                          f"disc loss G: {sum(discG_losses) / len(discG_losses):.4f} "
+                          f"disc loss F: {sum(discF_losses) / len(discF_losses):.4f} "
+                          f"gen loss G: {sum(genG_losses) / len(genG_losses):.4f} "
+                          f"gen loss F: {sum(genF_losses) / len(genF_losses):.4f}")
+
+                    discG_losses = []
+                    discF_losses = []
+                    genG_losses = []
+                    genF_losses = []
 
                     with no_grad():
                         # plot generated and real images
