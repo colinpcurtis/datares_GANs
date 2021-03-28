@@ -7,7 +7,7 @@ import torchvision.transforms as transforms
 import torchvision
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-from torch import ones_like, zeros_like, no_grad, save, device, mean, abs, randn, randn_like
+from torch import ones_like, zeros_like, no_grad, save, device, mean, abs, randn, randn_like, manual_seed
 
 # needed to preprocess
 from config import PROJECT_ROOT
@@ -18,6 +18,8 @@ from PIL import ImageFile
 from Models.ConditionalGAN.uNetGenerator import conditionalGenerator
 from Models.cycleGAN.cycleDiscriminator import cycleDiscriminator
 
+manual_seed(42)
+
 # model constants
 BATCH_SIZE = 3  # make batch size as big as possible on your machine until you get memory errors
 IMAGE_SIZE = 511
@@ -27,11 +29,11 @@ device = device("cuda" if is_available() else "cpu")
 
 # hyperparameters
 LEARNING_RATE = 1e-2
-LAMBDA = 10  # L1 penalty
+LAMBDA = 1  # L1 penalty
 BETAS = (0.9, 0.999)  # moving average for ADAM
 GAUSSIAN_NOISE_STD = .05
-SCHEDULER_STEP_SIZE = 20
-GAMMA = 0.1
+SCHEDULER_STEP_SIZE = 100
+GAMMA = 0.96
 
 
 class AddGaussianNoise(object):
@@ -69,7 +71,6 @@ class cycleGAN:
             Returns:
                 Data transform composition
         """
-        # TODO: calculate mean and std of data
         data_transforms = transforms.Compose([transforms.Resize(IMAGE_SIZE),
                                               transforms.ToTensor(),
                                               transforms.Normalize([img_mean for _ in range(CHANNELS_IMG)],
