@@ -1,7 +1,6 @@
 from torch import nn
 from torch.cuda import is_available
 from torch.optim import Adam
-from torch.optim.lr_scheduler import StepLR
 from torchvision.datasets import ImageFolder
 import torchvision.transforms as transforms
 import torchvision
@@ -22,14 +21,14 @@ torch.manual_seed(42)
 
 # model constants
 BATCH_SIZE = 3  # make batch size as big as possible on your machine until you get memory errors
-IMAGE_SIZE = 511
+IMAGE_SIZE = 512
 CHANNELS_IMG = 3
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 device = torch.device("cuda" if is_available() else "cpu")
 
 # hyperparameters
 LEARNING_RATE = 1e-2
-LAMBDA = 1  # L1 penalty
+LAMBDA = 5  # L1 penalty
 BETAS = (0.9, 0.999)  # moving average for ADAM
 GAUSSIAN_NOISE_STD = .05
 SCHEDULER_STEP_SIZE = 100
@@ -40,6 +39,7 @@ class AddGaussianNoise(object):
     """
         Add gaussian noise with specified mean and standard deviation to an input tensor
     """
+
     def __init__(self, mean=0., std=1.):
         self.std = std
         self.mean = mean
@@ -108,7 +108,7 @@ class cycleGAN:
             Returns:
                 L1 norm between real_im and cycle_im, want cycled image to be close to original
         """
-        return nn.L1Loss()(real_im - cycle_im)
+        return nn.L1Loss()(real_im, cycle_im)
 
     def identity_loss(self, real_im, same_im):
         """
@@ -118,7 +118,7 @@ class cycleGAN:
             Returns:
                 L1 norm between real_im and same_im, promotes feature matching for generator
         """
-        return nn.L1Loss()(real_im - same_im)
+        return nn.L1Loss()(real_im, same_im)
 
     def save_model(self, model, save_path):
         """
@@ -155,23 +155,15 @@ class cycleGAN:
         writer_realB = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/B/real")
         writer_fakeB = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/B/fake")
 
-        writer_disc_lossG = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/disc/lossG")  # track disc and gen loss
+        writer_disc_lossG = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/disc/lossG")
         writer_gen_lossG = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/gen/lossG")
 
-        writer_disc_lossF = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/disc/lossF")  # track disc and gen loss
+        writer_disc_lossF = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/disc/lossF")
         writer_gen_lossF = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/gen/lossF")
 
         # optimizers
-        genA2B_optimizer = Adam(genA2B.parameters(), lr=LEARNING_RATE, betas=BETAS)
-        discB_optimizer = Adam(discB.parameters(), lr=LEARNING_RATE, betas=BETAS)
-        genB2A_optimizer = Adam(genB2A.parameters(), lr=LEARNING_RATE, betas=BETAS)
-        discA_optimizer = Adam(discA.parameters(), lr=LEARNING_RATE, betas=BETAS)
-
-        # LR schedulers for corresponding optimizers
-        genA2B_scheduler = StepLR(genA2B_optimizer, step_size=SCHEDULER_STEP_SIZE, gamma=GAMMA)
-        genB2A_scheduler = StepLR(genB2A_optimizer, step_size=SCHEDULER_STEP_SIZE, gamma=GAMMA)
-        discB_scheduler = StepLR(discB_optimizer, step_size=SCHEDULER_STEP_SIZE, gamma=GAMMA)
-        discA_scheduler = StepLR(discA_optimizer, step_size=SCHEDULER_STEP_SIZE, gamma=GAMMA)
+        gen_optimizer = Adam(list(genA2B.parameters() + genB2A.parameters()), lr=LEARNING_RATE, betas=BETAS)
+        disc_optimizer = Adam(list(discB.parameters() + discA.parameters()), lr=LEARNING_RATE, betas=BETAS)
 
         genA2B.train()
         discB.train()
@@ -181,90 +173,72 @@ class cycleGAN:
         step = 0
         # train loop
         for epoch in range(self.num_epochs):
-            for batch_id, (imageA_real, imageB_real) in enumerate(zip(dataloader1, dataloader2)):
+            for batch_id, (A_real, B_real) in enumerate(zip(dataloader1, dataloader2)):
                 if min(len(dataloader2), len(dataloader1)) <= batch_id:
                     # the dataloaders are not the same size
                     break
-                imageA_real = imageA_real[0].to(device)
-                imageB_real = imageB_real[0].to(device)
+                A_real = A_real[0].to(device)
+                B_real = B_real[0].to(device)
 
-                # cycle images
-                sameA = genA2B(imageA_real)
-                sameB = genB2A(imageB_real)
+                # train discriminator
+                B_fake = genA2B(A_real)
+                discA_real = discA(A_real)
+                discB_fake = discB(B_fake.detach())
+                discA_real_loss = self.gan_loss(discA_real, torch.ones_like(discA_real))
+                discA_fake_loss = self.gan_loss(discB_fake, torch.zeros_like(discB_fake))
+                discA_loss = discA_real_loss + discA_fake_loss
 
-                # forward generator
-                imageB_fake = genA2B(imageA_real)
-                cycleA = genB2A(imageB_fake)
-                imageA_fake = genB2A(imageB_real)
-                cycleB = genA2B(imageA_fake)
+                A_fake = genB2A(B_real)
+                discB_real = discB(A_real)
+                discA_fake = discA(A_fake.detach())
+                discB_real_loss = self.gan_loss(discB_real, torch.ones_like(discB_real))
+                discB_fake_loss = self.gan_loss(discA_fake, torch.zeros_like(discA_fake))
+                discB_loss = discB_real_loss + discB_fake_loss
 
-                # get discriminator predictions
-                discA_fake = discA(imageA_fake)
-                discB_fake = discB(imageB_fake)
+                disc_loss = (discA_loss + discB_loss) / 2
+                disc_optimizer.zero_grad()
+                disc_loss.backward()
+                disc_optimizer.step()
 
-                # generator loss
-                target = torch.ones_like(discA_fake).detach()
-                lossA2B = self.gan_loss(discA_fake, target)
-                lossB2A = self.gan_loss(discB_fake, target)
+                # train generator
 
-                # cycle loss -> feature matching
-                cycle_loss = self.cycle_loss(imageA_real, cycleA) + self.cycle_loss(imageB_real, cycleB)
+                # get adversarial loss
+                discA_fake = discA(A_fake)
+                discB_fake = discB(B_fake)
+                genA2B_loss = self.gan_loss(discA_fake, torch.ones_like(discA_fake))
+                genB2A_loss = self.gan_loss(discB_fake, torch.ones_like(discB_fake))
+                adv_loss = genA2B_loss + genB2A_loss
 
-                # total losses
-                total_genA2B_loss = lossA2B + (LAMBDA * cycle_loss) + (LAMBDA * self.identity_loss(imageA_real, sameA))
-                total_genB2A_loss = lossB2A + (LAMBDA * cycle_loss) + (LAMBDA * self.identity_loss(imageB_real, sameB))
+                # cycle loss
+                cycleA = genB2A(B_fake)
+                cycleB = genA2B(A_fake)
+                cycle_loss = self.cycle_loss(cycleA, A_real) + self.cycle_loss(cycleB, B_real)
 
-                # calculate gen gradients
-                genA2B_optimizer.zero_grad()
-                genB2A_optimizer.zero_grad()
-                total_genA2B_loss.backward()
-                total_genB2A_loss.backward()
+                # identity loss
+                A_id = genA2B(A_real)
+                B_id = genB2A(B_real)
+                id_loss = self.identity_loss(A_id, A_real) + self.identity_loss(B_id, B_real)
 
-                genA2B_optimizer.step()
-                genB2A_optimizer.step()
+                gen_loss = adv_loss + LAMBDA * (cycle_loss + id_loss)
+                gen_optimizer.zero_grad()
+                gen_loss.backward()
+                gen_optimizer.step()
 
-                genA2B_scheduler.step()
-                genB2A_scheduler.step()
-
-                discA_optimizer.zero_grad()
-                discB_optimizer.zero_grad()
-
-                # update discA
-                pred_real = discA(imageA_real)
-                lossDA_real = self.gan_loss(pred_real, torch.ones_like(pred_real).detach())
-                pred_fake = discA(imageA_fake)
-                lossDA_fake = self.gan_loss(pred_fake, torch.zeros_like(pred_fake).detach())
-
-                totalDA_loss = (lossDA_real + lossDA_fake) * LAMBDA
-                totalDA_loss.backward()
-                discA_optimizer.step()
-
-                # update discB
-                pred_real = discB(imageB_real)
-                lossDB_real = self.gan_loss(pred_real, torch.ones_like(pred_real).detach())
-                pred_fake = discB(imageB_fake)
-                lossDB_fake = self.gan_loss(pred_fake, torch.zeros_like(pred_fake).detach())
-                totalDB_loss = (lossDB_real + lossDB_fake) * LAMBDA
-                totalDB_loss.backward()
-                discB_optimizer.step()
-
-                discB_scheduler.step()
-                discA_scheduler.step()
                 if batch_id % 10 == 0:
                     print(f"epoch: {epoch}/{self.num_epochs} "
                           f"batch: {batch_id}/{min(len(dataloader1), len(dataloader2))} "
-                          f"disc loss A: {totalDA_loss:.4f} "
-                          f"disc loss B: {totalDA_loss:.4f} "
-                          f"gen loss A2B: {total_genA2B_loss:.4f} "
-                          f"gen loss B2A: {total_genB2A_loss:.4f}")
+                          f"disc loss A: {discA_loss:.4f} "
+                          f"disc loss B: {discB_loss:.4f} "
+                          f"gen loss A2B: {genA2B_loss:.4f} "
+                          f"gen loss B2A: {genB2A_loss:.4f}")
 
                     with torch.no_grad():
                         # plot generated and real images
-                        img_grid_realA = torchvision.utils.make_grid(imageA_real[:16], normalize=True)
-                        img_grid_fakeA = torchvision.utils.make_grid(imageA_fake[:16], normalize=True)
+                        img_grid_realA = torchvision.utils.make_grid(A_real[:16], normalize=True)
+                        img_grid_fakeA = torchvision.utils.make_grid(A_fake[:16], normalize=True)
 
-                        img_grid_realB = torchvision.utils.make_grid(imageB_real[:16], normalize=True)
-                        img_grid_fakeB = torchvision.utils.make_grid(imageB_fake[:16], normalize=True)
+                        img_grid_realB = torchvision.utils.make_grid(B_real[:16], normalize=True)
+                        img_grid_fakeB = torchvision.utils.make_grid(B_fake[:16], normalize=True)
 
                         writer_realA.add_image("Ground Truth A", img_grid_realA, global_step=step)
                         writer_fakeA.add_image("Generated A", img_grid_fakeA, global_step=step)
@@ -272,11 +246,11 @@ class cycleGAN:
                         writer_realB.add_image("Ground Truth B", img_grid_realB, global_step=step)
                         writer_fakeB.add_image("Generated B", img_grid_fakeB, global_step=step)
 
-                        writer_disc_lossG.add_scalar("disc/lossDiscB", totalDB_loss, global_step=step)
-                        writer_gen_lossG.add_scalar("gen/lossGenA2B", total_genA2B_loss, global_step=step)
+                        writer_disc_lossG.add_scalar("disc/lossDiscB", discB_loss, global_step=step)
+                        writer_gen_lossG.add_scalar("gen/lossGenA2B", genA2B_loss, global_step=step)
 
-                        writer_disc_lossF.add_scalar("disc/lossDiscA", totalDA_loss, global_step=step)
-                        writer_gen_lossF.add_scalar("gen/lossGenB2A", total_genB2A_loss, global_step=step)
+                        writer_disc_lossF.add_scalar("disc/lossDiscA", discA_loss, global_step=step)
+                        writer_gen_lossF.add_scalar("gen/lossGenB2A", genB2A_loss, global_step=step)
 
                     step += 1
 

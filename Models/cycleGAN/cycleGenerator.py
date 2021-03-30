@@ -1,6 +1,4 @@
 import torch.nn as nn
-import torch.nn.functional as F
-
 
 class ResidualBlock(nn.Module):
     def __init__(self, in_features):
@@ -13,7 +11,7 @@ class ResidualBlock(nn.Module):
                       nn.ReflectionPad2d(1),
                       nn.Conv2d(in_features, in_features, 3),
                       nn.InstanceNorm2d(in_features)]
-
+        # nn.ReflectionPad2d(1), nn.ReflectionPad2d(1),
         self.conv_block = nn.Sequential(*conv_block)
 
     def forward(self, x):
@@ -24,7 +22,7 @@ class cycleGenerator(nn.Module):
     def __init__(self, image_size, n_residual_blocks=9):
         super(cycleGenerator, self).__init__()
 
-        # Initial convolution block
+        # Initial convolution block nn.ReflectionPad2d(3),
         model = [nn.ReflectionPad2d(3),
                  nn.Conv2d(image_size, 64, 7),
                  nn.InstanceNorm2d(64),
@@ -53,7 +51,7 @@ class cycleGenerator(nn.Module):
             in_features = out_features
             out_features = in_features // 2
 
-        # Output layer
+        # Output layer nn.ReflectionPad2d(3),
         model += [nn.ReflectionPad2d(3),
                   nn.Conv2d(64, image_size, 7),
                   nn.Tanh()]
@@ -62,3 +60,14 @@ class cycleGenerator(nn.Module):
 
     def forward(self, x):
         return self.model(x)
+
+
+if __name__ == "__main__":
+    import torch
+    gen = cycleGenerator(1)
+    x = torch.rand(1, 1, 512, 512)
+    x = gen.forward(x)
+    print(x.size())
+
+    y = torch.mean((x - torch.ones_like(x)))
+    print(y)
