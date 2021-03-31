@@ -12,7 +12,7 @@ import os
 from PIL import ImageFile
 
 # reuse pix2pix generator and discriminator for architectures
-from Models.cycleGAN.cycleDiscriminator import cycleDiscriminator
+from Models.cycleGAN.CycleDiscriminator import CycleDiscriminator
 
 manual_seed(42)
 
@@ -113,7 +113,7 @@ class testDisc:
         dataloader1 = DataLoader(imagesA, batch_size=BATCH_SIZE, shuffle=True, num_workers=3)
         dataloader2 = DataLoader(imagesB, batch_size=BATCH_SIZE, shuffle=True, num_workers=3)
 
-        disc = cycleDiscriminator(channels_img=CHANNELS_IMG).to(device)
+        disc = CycleDiscriminator(channels_img=CHANNELS_IMG).to(device)
 
         optimizer = Adam(disc.parameters(), lr=LEARNING_RATE, betas=BETAS)
         loss_fn = nn.BCEWithLogitsLoss()

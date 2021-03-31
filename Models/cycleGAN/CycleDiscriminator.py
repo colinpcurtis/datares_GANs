@@ -2,9 +2,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class cycleDiscriminator(nn.Module):
+class CycleDiscriminator(nn.Module):
     def __init__(self, channels_img):
-        super(cycleDiscriminator, self).__init__()
+        super(CycleDiscriminator, self).__init__()
         self.channels_img = channels_img
         model = [nn.Conv2d(self.channels_img, 64, 4, stride=2, padding=1),
                  nn.LeakyReLU(0.2, inplace=True)]

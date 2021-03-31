@@ -1,8 +1,7 @@
 import argparse
 from Models.DCGAN.DCGAN import DCGAN
 from Models.ConditionalGAN.conditionalGAN import conditionalGAN
-from Models.cycleGAN.cycleGAN import cycleGAN
-from torch import save
+from Models.cycleGAN.CycleGAN import CycleGAN
 
 if __name__ == "__main__":
 
@@ -37,5 +36,5 @@ if __name__ == "__main__":
         model.train()
 
     if args.model == "cycleGAN":
-        model = cycleGAN(args.epochs, args.saveLogs, args.saveModel, args.datasetDirectory)
+        model = CycleGAN(args.epochs, args.saveLogs, args.saveModel, args.datasetDirectory)
         model.train()

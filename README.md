@@ -22,6 +22,6 @@ port forwarded if in a virtual machine, so run ```gcloud compute ssh [INSTANCE_N
 in the local terminal to access the logs. Then visiting ```http://localhost:6006``` in a web browser 
 will display the training logs.
 
-It takes approximately 1.5 hours to train the Cycle GAN for 10 epochs using float 32.  
+It takes approximately 3 hours to train the Cycle GAN for 10 epochs using 5 residual layers and float 32.  
 
 Google Cloud SDK (if using a gcloud VM) must be installed for port forwarding.  

@@ -14,25 +14,23 @@ import os
 from PIL import ImageFile
 
 # reuse pix2pix generator and discriminator for architectures
-from Models.cycleGAN.cycleGenerator import cycleGenerator
-from Models.cycleGAN.cycleDiscriminator import cycleDiscriminator
+from Models.cycleGAN.CycleGenerator import CycleGenerator
+from Models.cycleGAN.CycleDiscriminator import CycleDiscriminator
 
-torch.manual_seed(42)
+torch.manual_seed(42)  # ensures reproducibility for random initializations
 
 # model constants
-BATCH_SIZE = 3  # make batch size as big as possible on your machine until you get memory errors
+BATCH_SIZE = 2  # make batch size as big as possible on your machine until you get memory errors
 IMAGE_SIZE = 512
 CHANNELS_IMG = 3
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 device = torch.device("cuda" if is_available() else "cpu")
 
 # hyperparameters
-LEARNING_RATE = 1e-2
+LEARNING_RATE = 2e-4
 LAMBDA = 5  # L1 penalty
-BETAS = (0.9, 0.999)  # moving average for ADAM
+BETAS = (0.5, 0.999)  # moving average for ADAM
 GAUSSIAN_NOISE_STD = .05
-SCHEDULER_STEP_SIZE = 100
-GAMMA = 0.96
 
 
 class AddGaussianNoise(object):
@@ -51,7 +49,7 @@ class AddGaussianNoise(object):
         return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
 
 
-class cycleGAN:
+class CycleGAN:
     def __init__(self, num_epochs, save_path_logs, save_path_model, dataset_dir):
         """
             Args:
@@ -139,15 +137,15 @@ class cycleGAN:
         dataloader1 = DataLoader(imagesA, batch_size=BATCH_SIZE, shuffle=True, num_workers=3)
         dataloader2 = DataLoader(imagesB, batch_size=BATCH_SIZE, shuffle=True, num_workers=3)
 
-        # generator G learns mapping G: A -> B
-        genA2B = cycleGenerator(image_size=CHANNELS_IMG).to(device)
-        # discriminator G differentiates between A and F(B)
-        discB = cycleDiscriminator(channels_img=CHANNELS_IMG).to(device)
+        # generator learns mapping A -> B
+        genA2B = CycleGenerator(image_size=CHANNELS_IMG).to(device)
+        # discriminator differentiates between A and F(B)
+        discB = CycleDiscriminator(channels_img=CHANNELS_IMG).to(device)
 
-        # generator F learns mapping F: B -> A
-        genB2A = cycleGenerator(image_size=CHANNELS_IMG).to(device)
-        # discriminator F differentiates between B and G(A)
-        discA = cycleDiscriminator(channels_img=CHANNELS_IMG).to(device)
+        # generator learns mapping  B -> A
+        genB2A = CycleGenerator(image_size=CHANNELS_IMG).to(device)
+        # discriminator differentiates between B and G(A)
+        discA = CycleDiscriminator(channels_img=CHANNELS_IMG).to(device)
 
         writer_realA = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/A/real")
         writer_fakeA = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/A/fake")
@@ -162,8 +160,8 @@ class cycleGAN:
         writer_gen_lossF = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/gen/lossF")
 
         # optimizers
-        gen_optimizer = Adam(list(genA2B.parameters() + genB2A.parameters()), lr=LEARNING_RATE, betas=BETAS)
-        disc_optimizer = Adam(list(discB.parameters() + discA.parameters()), lr=LEARNING_RATE, betas=BETAS)
+        gen_optimizer = Adam(list(genA2B.parameters()) + list(genB2A.parameters()), lr=LEARNING_RATE, betas=BETAS)
+        disc_optimizer = Adam(list(discB.parameters()) + list(discA.parameters()), lr=LEARNING_RATE, betas=BETAS)
 
         genA2B.train()
         discB.train()
