@@ -1,1 +1,7 @@
 TrainedModels filter=lfs diff=lfs merge=lfs -text
+TrainedModels/genB2A.pt filter=lfs diff=lfs merge=lfs -text
+TrainedModels/gen_optimizer.pt filter=lfs diff=lfs merge=lfs -text
+TrainedModels/discA.pt filter=lfs diff=lfs merge=lfs -text
+TrainedModels/discB.pt filter=lfs diff=lfs merge=lfs -text
+TrainedModels/disc_optimizer.pt filter=lfs diff=lfs merge=lfs -text
+TrainedModels/genA2B.pt filter=lfs diff=lfs merge=lfs -text
