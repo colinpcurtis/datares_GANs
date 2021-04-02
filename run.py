@@ -7,7 +7,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-m", "--model", action="store", help="model type: DCGAN or conditionalGAN",
+    parser.add_argument("-m", "--model", action="store", help="model type",
                         type=str, required=False)
 
     parser.add_argument("-e", "--epochs", action="store", help="num of epochs",
@@ -25,6 +25,9 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--datasetDirectory", action="store", help="directory of images for preprocessing",
                         type=str, required=False)
 
+    parser.add_argument("-t", "--trainedWeights", action="store", help="load model state dicts from local directory",
+                        type=str, required=False)
+
     args = parser.parse_args()
 
     if args.model == "DCGAN":
@@ -36,5 +39,5 @@ if __name__ == "__main__":
         model.train()
 
     if args.model == "cycleGAN":
-        model = CycleGAN(args.epochs, args.saveLogs, args.saveModel, args.datasetDirectory)
+        model = CycleGAN(args.epochs, args.saveLogs, args.saveModel, args.datasetDirectory, args.trainedWeights)
         model.train()
