@@ -8,6 +8,8 @@ import dash
 from PIL import Image
 import dash_core_components as dcc
 import dash_html_components as html
+import dash_bootstrap_components as dbc
+from dash_extensions import Download
 from dash.dependencies import Input, Output, State
 
 UPLOAD_DIRECTORY = "images/"
@@ -28,7 +30,7 @@ def download(path):
 
 
 app.layout = html.Div([
-    html.H2('Created by Adhvaith Vijay',
+    html.H2('By Adhvaith Vijay',
             style={'font-weight': 'bold', 'padding-left': '4px', 'font-size': '120%'}),
     dcc.Upload(
         id="upload-image",
@@ -47,7 +49,9 @@ app.layout = html.Div([
         },
         multiple=True,
     ),
-    html.Div(id='output-image-upload')
+    html.Div(id='output-image-upload'),
+    html.H2("File List"),
+    html.Ul(id="file-list")
     # html.H1("File Browser"),
     # html.H2("Upload"),
     # dcc.Upload(
@@ -86,8 +90,6 @@ def parse_contents(image):
     return html.Div([
         # html.H5(filename),
         # html.H6(datetime.datetime.fromtimestamp(date)),
-        # HTML images accept base64 encoded strings in the same format
-        # that is supplied by the upload
         html.Img(src='data:image/png;base64,{}'.format(encoded_image.decode()), style={'width': '100%'})
         # html.Img(src=contents)
         # html.Hr(),
@@ -109,9 +111,43 @@ def update_output(list_of_contents, list_of_names):
 
     image_file = Image.open('images/{}'.format(list_of_names[0]))  # open colour image
     image_file = image_file.convert('1')  # convert image to black and white
-    image_file.save('result.png')
+    image_file.save('images/converted_{}'.format(list_of_names[0]))
+    return parse_contents('images/converted_{}'.format(list_of_names[0]))
 
-    return parse_contents('result.png')
+
+def uploaded_files():
+    files = []
+    for filename in os.listdir(UPLOAD_DIRECTORY):
+        path = os.path.join(UPLOAD_DIRECTORY, filename)
+        if os.path.isfile(path):
+            files.append(filename)
+    return files
+
+
+def file_download_link(filename):
+    location = "/download/{}".format(urlquote(filename))
+    return html.A(filename, href=location)
+
+
+@app.callback(
+    Output("file-list", "children"),
+    [Input("upload-image", "filename"), Input("upload-image", "contents")]
+)
+def download_file(list_of_names, list_of_contents):
+    try:
+        if list_of_names is not None and list_of_contents is not None:
+            for name, data in zip(list_of_names, list_of_contents):
+                save_file(name, data)
+
+        image_file = Image.open('images/{}'.format(list_of_names[0]))  # open colour image
+        image_file = image_file.convert('1')  # convert image to black and white
+        image_file.save('images/converted_{}'.format(list_of_names[0]))
+        files = uploaded_files()
+    except TypeError:
+        return [html.Li("No files yet!")]
+
+    return [html.Li(file_download_link(filename)) for filename in files if
+            filename == 'converted_{}'.format(list_of_names[0])]
 
 
 if __name__ == "__main__":

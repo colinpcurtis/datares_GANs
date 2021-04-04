@@ -1,1 +1,1 @@
-web: gunicorn datares_test:server
+web: gunicorn app:server
