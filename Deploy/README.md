@@ -9,6 +9,8 @@
 
 ### Demo
 
+- ```git checkout zixuan_dev```, please checkout zixuan_dev to use the demo
+ 
 #### A small image-to-image demo 
 - Using the code from https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
 - Test the basic pipeline to transalate image
