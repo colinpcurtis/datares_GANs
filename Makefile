@@ -8,4 +8,4 @@ WEIGHTS=/TrainedModels
 # invole the "make" command to run the model
 
 train:
-	python3 run.py -m $(MODEL) -e $(EPOCHS) -l $(LOGS) -s $(SAVE_PATH) -d $(DATASET) -t $(TRAINED_MODELS)
+	python3 run.py -m $(MODEL) -e $(EPOCHS) -l $(LOGS) -s $(SAVE_PATH) -d $(DATASET) -t $(WEIGHTS)

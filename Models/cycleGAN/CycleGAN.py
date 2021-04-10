@@ -171,14 +171,14 @@ class CycleGAN:
 
         if self.trained_weights_path:
             # load trained model weights
-            discA.load_state_dict(torch.load(f"{self.trained_weights_path/discA.pt}", map_location=device))
-            discB.load_state_dict(torch.load(f"{self.trained_weights_path/discB.pt}", map_location=device))
-            genA2B.load_state_dict(torch.load(f"{self.trained_weights_path/genA2B.pt}", map_location=device))
-            genB2A.load_state_dict(torch.load(f"{self.trained_weights_path/genB2A.pt}", map_location=device))
-            gen_optimizer.load_state_dict(torch.load(f"{self.trained_weights_path/gen_optimizer.pt}",
+            discA.load_state_dict(torch.load(f"{self.trained_weights_path}/discA.pt", map_location=device))
+            discB.load_state_dict(torch.load(f"{self.trained_weights_path}/discB.pt", map_location=device))
+            genA2B.load_state_dict(torch.load(f"{self.trained_weights_path}/genA2B.pt", map_location=device))
+            genB2A.load_state_dict(torch.load(f"{self.trained_weights_path}/genB2A.pt", map_location=device))
+            gen_optimizer.load_state_dict(torch.load(f"{self.trained_weights_path}/gen_optimizer.pt",
                                                      map_location=device))
-            disc_optimizer.load_state_dict(torch.load(f"{self.trained_weights_path /disc_optimizer.pt}",
-                                                     map_location=device))
+            disc_optimizer.load_state_dict(torch.load(f"{self.trained_weights_path}/disc_optimizer.pt",
+                                                      map_location=device))
         step = 0
         # train loop
         for epoch in range(self.num_epochs):
@@ -262,12 +262,11 @@ class CycleGAN:
                         writer_gen_lossF.add_scalar("gen/lossGenB2A", genB2A_loss, global_step=step)
 
                     # save model at end of each batch
-                    torch.save(genA2B.state_dict(), "genA2B.pt")
-                    torch.save(genB2A.state_dict(), "genB2A.pt")
-                    torch.save(discA.state_dict(), "discA.pt")
-                    torch.save(discB.state_dict(), "discB.pt")
-                    torch.save(disc_optimizer.state_dict(), "disc_optimizer.pt")
-                    torch.save(gen_optimizer.state_dict(), "gen_optimizer.pt")
+                    torch.save(genA2B.state_dict(), "/TrainingModels/genA2B.pt")
+                    torch.save(genB2A.state_dict(), "/TrainingModels/genB2A.pt")
+                    torch.save(discA.state_dict(), "/TrainingModels/discA.pt")
+                    torch.save(discB.state_dict(), "/TrainingModels/discB.pt")
+                    torch.save(disc_optimizer.state_dict(), "/TrainingModels/disc_optimizer.pt")
+                    torch.save(gen_optimizer.state_dict(), "/TrainingModels/gen_optimizer.pt")
 
                     step += 1
-
