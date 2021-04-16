@@ -1,7 +1,7 @@
 import argparse
 from Models.DCGAN.DCGAN import DCGAN
 from Models.ConditionalGAN.conditionalGAN import conditionalGAN
-from Models.CycleGAN.CycleGAN import CycleGAN
+from Models.cycleGAN.CycleGAN import CycleGAN
 
 if __name__ == "__main__":
 
