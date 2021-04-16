@@ -13,9 +13,8 @@ from config import PROJECT_ROOT
 import os
 from PIL import ImageFile
 
-# reuse pix2pix generator and discriminator for architectures
-from Models.cycleGAN.CycleGenerator import CycleGenerator
-from Models.cycleGAN.CycleDiscriminator import CycleDiscriminator
+from Models.CycleGAN.CycleGenerator import CycleGenerator
+from Models.CycleGAN.CycleDiscriminator import CycleDiscriminator
 
 torch.manual_seed(42)  # ensures reproducibility for random initializations
 
