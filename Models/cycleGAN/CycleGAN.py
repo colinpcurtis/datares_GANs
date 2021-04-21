@@ -49,7 +49,7 @@ class AddGaussianNoise(object):
 
 
 class CycleGAN:
-    def __init__(self, num_epochs, save_path_logs, save_path_model, dataset_dir, trained_weights_path):
+    def __init__(self, num_epochs, save_path_logs, save_path_model, dataset_dir):
         """
             Args:
                 num_epochs: number of epochs to train model
@@ -60,7 +60,6 @@ class CycleGAN:
         self.save_path_logs = save_path_logs
         self.save_path_model = save_path_model
         self.dataset_dir = dataset_dir
-        self.trained_weights_path = trained_weights_path
 
     def transform(self):
         """
@@ -168,16 +167,6 @@ class CycleGAN:
         genB2A.train()
         discA.train()
 
-        if self.trained_weights_path:
-            # load trained model weights
-            discA.load_state_dict(torch.load(f"{self.trained_weights_path}/discA.pt", map_location=device))
-            discB.load_state_dict(torch.load(f"{self.trained_weights_path}/discB.pt", map_location=device))
-            genA2B.load_state_dict(torch.load(f"{self.trained_weights_path}/genA2B.pt", map_location=device))
-            genB2A.load_state_dict(torch.load(f"{self.trained_weights_path}/genB2A.pt", map_location=device))
-            gen_optimizer.load_state_dict(torch.load(f"{self.trained_weights_path}/gen_optimizer.pt",
-                                                     map_location=device))
-            disc_optimizer.load_state_dict(torch.load(f"{self.trained_weights_path}/disc_optimizer.pt",
-                                                      map_location=device))
         step = 0
         # train loop
         for epoch in range(self.num_epochs):

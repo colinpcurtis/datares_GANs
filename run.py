@@ -39,5 +39,5 @@ if __name__ == "__main__":
         model.train()
 
     if args.model == "cycleGAN":
-        model = CycleGAN(args.epochs, args.saveLogs, args.saveModel, args.datasetDirectory, args.trainedWeights)
+        model = CycleGAN(args.epochs, args.saveLogs, args.saveModel, args.datasetDirectory)
         model.train()
