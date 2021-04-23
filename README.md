@@ -15,10 +15,13 @@ the images.
 
 #### Training
 There are numerous command line arguments to run the model.  For simplicity purposes they can be found and changed in 
-the ```Makefile```.  To run the model, simply invoke the ```make``` command and training will start.  
+the ```Makefile```.  To run the model, simply invoke the ```make``` command and training will start.
 
-In a new terminal window, run ```tensorboard --logdir ./logs``` to open the TensorBoard logs.  This has to be 
-port forwarded if in a virtual machine, so run ```gcloud compute ssh user@instance_name -- -NfL 6006:localhost:6006```
+There may be some _CUDA out of memory errors_ depending on the GPU that is used for training.  In that case, change the _BATCH\_SIZE_ variable to something smaller in ```Models/cycleGAN/CycleGAN.py```
+
+In a new terminal window, run ```tensorboard --logdir ./logs``` to open the TensorBoard logs.  This has to be
+port forwarded to a local computer, so run 
+```gcloud compute ssh user@instance_name -- -NfL 6006:localhost:6006```
 in the local terminal to access the logs. Then visiting ```http://localhost:6006``` in a web browser 
 will display the training logs.
 
