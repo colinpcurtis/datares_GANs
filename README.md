@@ -2,7 +2,7 @@
 
 ### Installation and Setup
 
-It is recommended to run this project on a Google Cloud VM instance preinstalled with NVIDIA drivers, CUDA, and pytorch.  
+It is recommended to run this project on a _Deep Learning with Linux_ Google Cloud VM instance preinstalled with NVIDIA drivers, CUDA 11, and PyTorch 1.8.   
 Once the VM is set up, clone the repo with ```git clone https://github.com/colinpcurtis/datares_GANs.git``` 
 and ```cd datares_GANs```.
 
@@ -18,7 +18,7 @@ There are numerous command line arguments to run the model.  For simplicity purp
 the ```Makefile```.  To run the model, simply invoke the ```make``` command and training will start.  
 
 In a new terminal window, run ```tensorboard --logdir ./logs``` to open the TensorBoard logs.  This has to be 
-port forwarded if in a virtual machine, so run ```gcloud compute ssh [INSTANCE_NAME] -- -NfL 6006:localhost:6006```
+port forwarded if in a virtual machine, so run ```gcloud compute ssh user@instance_name -- -NfL 6006:localhost:6006```
 in the local terminal to access the logs. Then visiting ```http://localhost:6006``` in a web browser 
 will display the training logs.
 
