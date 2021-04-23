@@ -1,11 +1,10 @@
 MODEL=CycleGAN
 EPOCHS=10
 LOGS=logs
-SAVE_PATH=paintingGenerator.pt
+SAVE_PATH=TrainingModels
 DATASET=/monet2photo
-WEIGHTS=/TrainedModels
 # only change the arguments above
 # invoke the "make" command to run the model
 
 train:
-	python3 run.py -m $(MODEL) -e $(EPOCHS) -l $(LOGS) -s $(SAVE_PATH) -d $(DATASET) -t $(WEIGHTS)
+	python3 run.py -m $(MODEL) -e $(EPOCHS) -l $(LOGS) -s $(SAVE_PATH) -d $(DATASET)

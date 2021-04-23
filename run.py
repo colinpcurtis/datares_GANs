@@ -19,13 +19,16 @@ if __name__ == "__main__":
     parser.add_argument("-l", "--saveLogs", action="store", help="save logs location",
                         type=str, required=False)
 
-    parser.add_argument("-s", "--saveModel", action="store", help="save state dict path",
+    parser.add_argument("-s", "--saveModel", action="store", 
+                        help="save state dict path",
                         type=str, required=False)
 
-    parser.add_argument("-d", "--datasetDirectory", action="store", help="directory of images for preprocessing",
+    parser.add_argument("-d", "--datasetDirectory", action="store", 
+                        help="directory of images for preprocessing",
                         type=str, required=False)
 
-    parser.add_argument("-t", "--trainedWeights", action="store", help="load model state dicts from local directory",
+    parser.add_argument("-t", "--trainedWeights", action="store", 
+                        help="load model state dicts from local directory",
                         type=str, required=False)
 
     args = parser.parse_args()
@@ -38,6 +41,6 @@ if __name__ == "__main__":
         model = conditionalGAN(args.epochs, args.saveLogs, args.saveModel)
         model.train()
 
-    if args.model == "cycleGAN":
+    if args.model == "CycleGAN":
         model = CycleGAN(args.epochs, args.saveLogs, args.saveModel, args.datasetDirectory)
         model.train()

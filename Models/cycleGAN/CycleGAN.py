@@ -250,11 +250,11 @@ class CycleGAN:
                         writer_gen_lossF.add_scalar("gen/lossGenB2A", genB2A_loss, global_step=step)
 
                     # save model at end of each batch
-                    torch.save(genA2B.state_dict(), "/TrainingModels/genA2B.pt")
-                    torch.save(genB2A.state_dict(), "/TrainingModels/genB2A.pt")
-                    torch.save(discA.state_dict(), "/TrainingModels/discA.pt")
-                    torch.save(discB.state_dict(), "/TrainingModels/discB.pt")
-                    torch.save(disc_optimizer.state_dict(), "/TrainingModels/disc_optimizer.pt")
-                    torch.save(gen_optimizer.state_dict(), "/TrainingModels/gen_optimizer.pt")
+                    torch.save(genA2B.state_dict(), f"{PROJECT_ROOT}/TrainingModels/genA2B.pt")
+                    torch.save(genB2A.state_dict(), f"{PROJECT_ROOT}/TrainingModels/genB2A.pt")
+                    torch.save(discA.state_dict(), f"{PROJECT_ROOT}/TrainingModels/discA.pt")
+                    torch.save(discB.state_dict(), f"{PROJECT_ROOT}/TrainingModels/discB.pt")
+                    torch.save(disc_optimizer.state_dict(), f"{PROJECT_ROOT}/TrainingModels/disc_optimizer.pt")
+                    torch.save(gen_optimizer.state_dict(), f"{PROJECT_ROOT}/TrainingModels/gen_optimizer.pt")
 
                     step += 1

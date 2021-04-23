@@ -1,5 +1,7 @@
 #!/bin/bash
 
+mkdir TrainingModels
+
 cd datasets
 
 for d in */; do # loop over directories
