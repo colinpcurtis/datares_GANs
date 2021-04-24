@@ -10,6 +10,7 @@ import torchvision.transforms as transforms
 from PIL import Image
 
 from Models.cycleGAN.CycleGAN import IMAGE_SIZE
+from config import PROJECT_ROOT
 
 
 def transform(image_bytes):
@@ -56,12 +57,8 @@ def get_prediction(model, im_path: str):
 
 if __name__ == "__main__":
     # simple script for testing
-    # add your own image and generator
 
-    gen = load_model("genB2A.pt")
+    gen = load_model(f"{PROJECT_ROOT}/TrainedModels/genB2A.pt")
 
-    bytes = load_im("test.png")
-    im2 = transform(bytes)
-    assert im2.size() == torch.Size([1, 3, 512, 512])
-    pred = get_prediction(gen, "test.png")
-    pred.save("pred.png")
+    pred = get_prediction(gen, "test3.jpeg")
+    pred.save("pred3.jpg")

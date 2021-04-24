@@ -40,7 +40,7 @@ navbar = dbc.NavbarSimple(
             label="More",
         ),
     ],
-    brand="CycleGan Image to Image Demo",
+    brand="CycleGAN Image Style Transfer",
     brand_href="#",
     color="primary",
     dark=True,
