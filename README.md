@@ -28,3 +28,14 @@ will display the training logs.
 It takes approximately 3 hours to train the Cycle GAN for 10 epochs using 5 residual layers and float 32.  
 
 Google Cloud SDK (if using a gcloud VM) must be installed for port forwarding.  
+
+
+## Preliminary Results
+The final iteration of the model will allow users to upload images onto a web app, but some initial results can be seen below.  
+
+This large image of Royce Hall has to be cropped to a 512x512 size in order to fit in the model. 
+![Raw Image](/Deploy/test3.jpeg)
+
+Then a generated image from the Cycle GAN can be seen below.
+
+![Generated Image](/Deploy/pred3.jpg)
