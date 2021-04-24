@@ -8,3 +8,6 @@ DATASET=/monet2photo
 
 train:
 	python3 run.py -m $(MODEL) -e $(EPOCHS) -l $(LOGS) -s $(SAVE_PATH) -d $(DATASET)
+
+dataset: 
+	python3 fetch_dataset.py

@@ -9,7 +9,7 @@ and ```cd datares_GANs```.
 ### Running the Conditional and Cycle GAN
 
 #### Fetching the dataset
-Run ```python3 fetch_dataset.py```.  This downloads and unzips the dataset zip files into the ```/datasets``` directory.   
+Run ```make dataset```.  This downloads and unzips the dataset zip files into the ```/datasets``` directory.
 Then run ```./move.sh``` to move the dataset into a format so that the PyTorch dataset class can read 
 the images.
 
