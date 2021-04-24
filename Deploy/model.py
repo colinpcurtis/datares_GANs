@@ -9,9 +9,7 @@ import io
 import torchvision.transforms as transforms
 from PIL import Image
 
-from Models.cycleGAN.CycleGenerator import CycleGenerator, ResidualBlock
 from Models.cycleGAN.CycleGAN import IMAGE_SIZE
-from config import PROJECT_ROOT
 
 
 def transform(image_bytes):
@@ -31,7 +29,7 @@ def load_model(path: str):
 
 
 def load_im(path: str):
-    im = Image.open(path).convert('RGB').save(path)
+    Image.open(path).convert('RGB').save(path)
     with open(path, "rb") as f:
         image_bytes = f.read()
 
@@ -43,7 +41,10 @@ def get_prediction(model, im_path: str):
     im_bytes = load_im(im_path)
 
     tensor = transform(im_bytes)
-    prediction = model.forward(tensor).squeeze()  # makes image [1, 512, 512]
+
+    # do foward pass on model to get prediction
+    prediction = model.forward(tensor).squeeze()  # squeeze makes image [3, 512, 512]
+    assert prediction.size() == torch.Size([3, 512, 512])
 
     tensorToPIL = transforms.ToPILImage(mode="RGB")
 
@@ -51,3 +52,16 @@ def get_prediction(model, im_path: str):
     z = z + torch.full_like(z, .5)
 
     return tensorToPIL(z)
+
+
+if __name__ == "__main__":
+    # simple script for testing
+    # add your own image and generator
+
+    gen = load_model("genB2A.pt")
+
+    bytes = load_im("test.png")
+    im2 = transform(bytes)
+    assert im2.size() == torch.Size([1, 3, 512, 512])
+    pred = get_prediction(gen, "test.png")
+    pred.save("pred.png")
