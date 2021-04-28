@@ -1,5 +1,5 @@
 import base64
-import os
+import os,sys
 import datetime
 from urllib.parse import quote as urlquote
 import re
@@ -11,6 +11,9 @@ import dash_html_components as html
 import dash_bootstrap_components as dbc
 from dash_extensions import Download
 from dash.dependencies import Input, Output, State
+from model import load_model, get_prediction
+from config import PROJECT_ROOT, IMG_DIR
+
 
 UPLOAD_DIRECTORY = "images/"
 
@@ -111,7 +114,7 @@ app.layout = html.Div([
 def save_file(name, content):
     """Decode and store a file uploaded with Plotly Dash."""
     data = content.encode("utf8").split(b";base64,")[1]
-    with open(os.path.join("test_example/datasets/horse2zebra/testA/", name), "wb") as fp:
+    with open(os.path.join(IMG_DIR, name), "wb") as fp:
         fp.write(base64.decodebytes(data))
 
 
@@ -132,7 +135,7 @@ def update_inputbox(list_of_contents, list_of_names):
         for name, data in zip(list_of_names, list_of_contents):
             save_file(name, data)
 
-    current_img = 'test_example/datasets/horse2zebra/testA/{}'.format(list_of_names[0])
+    current_img = os.path.join(IMG_DIR,list_of_names[0]) 
 
     encoded_image = base64.b64encode(open(current_img, 'rb').read())
     return html.Div([
@@ -149,9 +152,12 @@ def update_inputbox(list_of_contents, list_of_names):
 def update_output(n, list_of_names):
     if n is not None:
         # process
-        os.system('python test_example/test.py --checkpoints_dir test_example/checkpoints --results_dir test_example/results --dataroot test_example/datasets/horse2zebra/testA --name horse2zebra_pretrained --model test --no_dropout --gpu_ids -1')
-        fname = re.match(r"(.*)\.", list_of_names[0])[0]
-        return parse_contents('test_example/results/horse2zebra_pretrained/test_latest/images/fake_{}png'.format(fname))
+        gen = load_model(f"{PROJECT_ROOT}/TrainedModels/genB2A.pt")
+        current_img = os.path.join(IMG_DIR,list_of_names[0]) 
+        new_name = "new_" + list_of_names[0]
+        pred = get_prediction(gen, current_img)
+        pred.save(os.path.join(IMG_DIR,new_name))
+        return parse_contents(os.path.join(IMG_DIR,new_name))
 
 
 def uploaded_files():

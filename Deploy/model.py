@@ -8,7 +8,10 @@ import torch
 import io
 import torchvision.transforms as transforms
 from PIL import Image
-
+import os, sys
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
 from Models.cycleGAN.CycleGAN import IMAGE_SIZE
 from config import PROJECT_ROOT
 
