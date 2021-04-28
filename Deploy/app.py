@@ -12,7 +12,7 @@ import dash_bootstrap_components as dbc
 from dash_extensions import Download
 from dash.dependencies import Input, Output, State
 from model import load_model, get_prediction
-from config import PROJECT_ROOT, IMG_DIR
+from setup import PROJECT_ROOT, IMG_DIR
 
 
 UPLOAD_DIRECTORY = "uploaded_img"
@@ -154,7 +154,7 @@ def update_inputbox(list_of_contents, list_of_names):
 def update_output(n, list_of_names):
     if n is not None:
         # process
-        gen = load_model(f"{PROJECT_ROOT}/trainedModels/genB2A.pt")
+        gen = load_model(f"{PROJECT_ROOT}/genB2A.pt")
         current_img = os.path.join(IMG_DIR,list_of_names[0]) 
         new_name = "new_" + list_of_names[0]
         pred = get_prediction(gen, current_img)
