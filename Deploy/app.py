@@ -154,7 +154,7 @@ def update_inputbox(list_of_contents, list_of_names):
 def update_output(n, list_of_names):
     if n is not None:
         # process
-        gen = load_model(f"{PROJECT_ROOT}/TrainedModels/genB2A.pt")
+        gen = load_model(f"{PROJECT_ROOT}/trainedModels/genB2A.pt")
         current_img = os.path.join(IMG_DIR,list_of_names[0]) 
         new_name = "new_" + list_of_names[0]
         pred = get_prediction(gen, current_img)
@@ -182,4 +182,4 @@ def file_download_link(filename):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True, port=8888)
+    app.run_server(debug=True, host='0.0.0.0', port=8888)

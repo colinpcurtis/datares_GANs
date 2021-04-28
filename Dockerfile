@@ -7,8 +7,6 @@ RUN pip3 install -r requirements.txt
 
 COPY . .
 
-RUN cd Deploy
-
 ENTRYPOINT [ "python3" ]
 
-CMD ["app.py"]
+CMD ["Deploy/app.py"]
