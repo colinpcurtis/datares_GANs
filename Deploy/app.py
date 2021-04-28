@@ -15,7 +15,9 @@ from model import load_model, get_prediction
 from config import PROJECT_ROOT, IMG_DIR
 
 
-UPLOAD_DIRECTORY = "images/"
+UPLOAD_DIRECTORY = "uploaded_img"
+
+# TODO: need to delete uploaded images after some time frame or we'll run out of space
 
 if not os.path.exists(UPLOAD_DIRECTORY):
     os.makedirs(UPLOAD_DIRECTORY)
