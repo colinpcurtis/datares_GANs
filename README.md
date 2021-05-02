@@ -30,7 +30,7 @@ It takes approximately 3 hours to train the Cycle GAN for 10 epochs using 5 resi
 Google Cloud SDK (if using a gcloud VM) must be installed for port forwarding.  
 
 
-## Preliminary Results
+#### Preliminary Results
 The final iteration of the model will allow users to upload images onto a web app, but some initial results can be seen below.  
 
 This large image of Royce Hall has to be cropped to a 512x512 size in order to fit in the model. 
@@ -39,3 +39,12 @@ This large image of Royce Hall has to be cropped to a 512x512 size in order to f
 Then a generated image from the Cycle GAN can be seen below.
 
 ![Generated Image](/Deploy/pred3.jpg)
+
+
+## Running the Deployment Webpage
+
+It is recommended to run the inference model as a Docker container, and as such Docker should be installed on the system.
+
+To build the image, run ```docker build -t gans_deploy .```, which will take a few minutes to run.  
+
+Then, run ```docker run -d -p 8888:8888 gans_deploy``` and visit ```http://localhost:8888``` to use the webpage.  

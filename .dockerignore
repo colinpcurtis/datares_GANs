@@ -1,1 +1,15 @@
 /trainedModels
+/Models/ConditionalGAN/
+/Models/DCGAN/
+/Models/.DS_Store
+/Deploy/test3.jpeg
+/Deploy/pred3.jpg
+/Deploy/.DS_Store
+.git
+.idea
+.DS_Store
+LICENSE
+README.md
+.vscode
+.github
+.gitattributes

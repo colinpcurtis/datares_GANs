@@ -1,9 +1,3 @@
-"""
-    Colin Curtis - 04/23/2021
-    Defines helper functions for reloading our model
-    and transforming the loaded images
-"""
-
 import torch
 import io
 import torchvision.transforms as transforms
@@ -18,6 +12,7 @@ sys.path.append(parentdir)
 
 def transform(image_bytes):
     # apply specified transforms on the image and return transformed image
+    # we don't reapply Gaussian Noise because that's only for training
     transform_list = transforms.Compose([transforms.Resize(IMAGE_SIZE),
                                          transforms.CenterCrop(IMAGE_SIZE),
                                          transforms.ToTensor(),
@@ -33,6 +28,10 @@ def load_model(path: str):
 
 
 def load_im(path: str):
+    # open image at path and convert to RGB, then save at same location
+    # need this because some image formats are not by default 3 channels
+    # for example .png sometimes is 4 color channels and this would break
+    # the server
     Image.open(path).convert('RGB').save(path)
     with open(path, "rb") as f:
         image_bytes = f.read()
@@ -41,7 +40,6 @@ def load_im(path: str):
 
 
 def get_prediction(model, im_path: str):
-    # TODO: add asserts to make sure everything is of the correct size
     im_bytes = load_im(im_path)
 
     tensor = transform(im_bytes)
@@ -51,8 +49,8 @@ def get_prediction(model, im_path: str):
     assert prediction.size() == torch.Size([3, 512, 512])
 
     tensorToPIL = transforms.ToPILImage(mode="RGB")
-
-    z = prediction * torch.full_like(prediction, .5)  # un-normalize the image using mean and std
+    # need to un-normalize the image using mean and std
+    z = prediction * torch.full_like(prediction, .5)  
     z = z + torch.full_like(z, .5)
 
     return tensorToPIL(z)

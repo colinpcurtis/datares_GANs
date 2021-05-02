@@ -25,7 +25,7 @@ if not os.path.exists(UPLOAD_DIRECTORY):
 # create a route for downloading files directly:
 server = Flask(__name__)
 app = dash.Dash(server=server, external_stylesheets=[dbc.themes.MINTY])
-app.title = 'CycleGan Demo'
+app.title = 'Make-A-Monet'
 
 
 # Frontend Components
@@ -34,7 +34,6 @@ app.title = 'CycleGan Demo'
 # Nav Bar
 navbar = dbc.NavbarSimple(
     children=[
-        dbc.NavItem(dbc.NavLink("Demo", href="#")),
         dbc.DropdownMenu(
             children=[
                 dbc.DropdownMenuItem("More pages", header=True),
@@ -158,8 +157,8 @@ def update_output(n, list_of_names):
         current_img = os.path.join(IMG_DIR,list_of_names[0]) 
         new_name = "new_" + list_of_names[0]
         pred = get_prediction(gen, current_img)
-        pred.save(os.path.join(IMG_DIR,new_name))
-        return parse_contents(os.path.join(IMG_DIR,new_name))
+        pred.save(os.path.join(IMG_DIR, new_name))
+        return parse_contents(os.path.join(IMG_DIR, new_name))
 
 
 def uploaded_files():
