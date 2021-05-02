@@ -1,1 +1,1 @@
-web: python3 Deploy/app.py
+web: cd Deploy && python3 app.py
