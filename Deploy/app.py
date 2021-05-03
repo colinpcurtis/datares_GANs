@@ -16,6 +16,8 @@ from setup import PROJECT_ROOT, IMG_DIR
 
 
 UPLOAD_DIRECTORY = "uploaded_img"
+gen = load_model(f"{PROJECT_ROOT}/genB2A.pt")  
+# load model at server startup so we don't waste time loading it when we get an inference request
 
 # TODO: need to delete uploaded images after some time frame or we'll run out of space
 
@@ -49,6 +51,7 @@ navbar = dbc.NavbarSimple(
     color="primary",
     dark=True,
 )
+
 # Inputbox
 inputbox = dbc.Card(
     [
@@ -67,6 +70,7 @@ inputbox = dbc.Card(
     ],
     style={"width": "18rem","height":"18rem"}
 )
+
 # Processbox
 processbox = dbc.Card(
     [
@@ -97,19 +101,18 @@ app.layout = html.Div([
     html.H2('Interactive Image Translation',
             style={'font-weight': 'bold', 'padding-left': '10%', 'font-size': '120%'}),
     html.Div(
-    [
-        dbc.Row(
-            [
-                dbc.Col(inputbox, width="auto"),
-                dbc.Col(processbox, width="auto"),
-                dbc.Col(outputbox, width="auto"),
-            ],
-            style={'padding-left':'15%','padding-right':'15%','padding-top':'10%'},align="center"
-        ),
-    ]
-)
-]
-)
+        [
+            dbc.Row(
+                [
+                    dbc.Col(inputbox, width="auto"),
+                    dbc.Col(processbox, width="auto"),
+                    dbc.Col(outputbox, width="auto"),
+                ],
+                style={'padding-left':'15%','padding-right':'15%','padding-top':'10%'},align="center"
+            ),
+        ]
+    )
+])
 
 
 def save_file(name, content):
@@ -124,7 +127,6 @@ def parse_contents(image):
     return html.Div([
         html.Img(src='data:image/png;base64,{}'.format(encoded_image.decode()), style={'width': '100%'})
     ])
-
 
 
 # upload the img
@@ -148,13 +150,11 @@ def update_inputbox(list_of_contents, list_of_names):
     Output('output-image-upload', 'children'),
     [Input('process',"n_clicks")],
     State('upload-image', 'filename')
-    
     )
 def update_output(n, list_of_names):
     if n is not None:
         # process
-        gen = load_model(f"{PROJECT_ROOT}/genB2A.pt")
-        current_img = os.path.join(IMG_DIR,list_of_names[0]) 
+        current_img = os.path.join(IMG_DIR,list_of_names[0])
         new_name = "new_" + list_of_names[0]
         pred = get_prediction(gen, current_img)
         pred.save(os.path.join(IMG_DIR, new_name))
@@ -174,6 +174,7 @@ def uploaded_files():
 def download(path):
     """Serve a file from the upload directory."""
     return send_from_directory(UPLOAD_DIRECTORY, path, as_attachment=True)
+
 
 def file_download_link(filename):
     location = "/download/{}".format(urlquote(filename))

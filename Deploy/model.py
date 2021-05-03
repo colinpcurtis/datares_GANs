@@ -4,7 +4,6 @@ import torchvision.transforms as transforms
 from PIL import Image
 import os, sys
 from setup import IMAGE_SIZE 
-import time
 
 currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
