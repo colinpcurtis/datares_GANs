@@ -41,7 +41,7 @@ Then a generated image from the Cycle GAN can be seen below.
 ![Generated Image](/Deploy/pred3.jpg)
 
 
-## Running the Deployment Webpage
+## Running the Deployment Webpage Locally
 
 It is recommended to run the inference model as a Docker container, and as such Docker should be installed on the system.
 

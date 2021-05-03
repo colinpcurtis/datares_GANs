@@ -4,6 +4,7 @@ import torchvision.transforms as transforms
 from PIL import Image
 import os, sys
 from setup import IMAGE_SIZE 
+import time
 
 currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
@@ -23,8 +24,13 @@ def transform(image_bytes):
 
 def load_model(path: str):
     model = torch.load(path, map_location='cpu')
-    model.eval()
-    return model
+    # quantize the model from torch.float32 to torch.qint8 (8 bit int) for much faster inference time
+    # and also reduce RAM footprint on the deployment server
+    quant_model = torch.quantization.quantize_dynamic(model, 
+                                                      {torch.nn.Conv2d, torch.nn.ConvTranspose2d, torch.nn.InstanceNorm2d}, 
+                                                      torch.qint8)
+    quant_model.eval()
+    return quant_model
 
 
 def load_im(path: str):

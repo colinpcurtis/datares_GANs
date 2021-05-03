@@ -182,4 +182,6 @@ def file_download_link(filename):
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 8888))
+    # heroku sets its own port environment variable, so we need to run the server on 
+    # that port when on the server and otherwise 8888
     app.run_server(debug=False, host='0.0.0.0', port=port)
