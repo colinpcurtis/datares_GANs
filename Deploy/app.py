@@ -154,9 +154,12 @@ def update_inputbox(list_of_contents, list_of_names):
 def update_output(n, list_of_names):
     if n is not None:
         # process
+        print(os.listdir(f"{UPLOAD_DIRECTORY}"))
         current_img = os.path.join(IMG_DIR,list_of_names[0])
         new_name = "new_" + list_of_names[0]
         pred = get_prediction(gen, current_img)
+        # remove the original uploaded image since we're done using it
+        os.remove(current_img)
         pred.save(os.path.join(IMG_DIR, new_name))
         return parse_contents(os.path.join(IMG_DIR, new_name))
 

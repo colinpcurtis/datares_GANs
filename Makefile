@@ -1,7 +1,7 @@
 MODEL=CycleGAN
-EPOCHS=10
+EPOCHS=40
 LOGS=logs
-SAVE_PATH=TrainingModels
+SAVE_PATH=trainedModels
 DATASET=/monet2photo
 # only change the arguments above
 # invoke the "make" command to run the model

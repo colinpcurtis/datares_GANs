@@ -1,4 +1,5 @@
 from torch import nn
+import torch.nn.functional as F
 from torch.cuda import is_available
 from torch.optim import Adam
 from torchvision.datasets import ImageFolder
@@ -49,7 +50,7 @@ class AddGaussianNoise(object):
 
 
 class CycleGAN:
-    def __init__(self, num_epochs, save_path_logs, save_path_model, dataset_dir):
+    def __init__(self, num_epochs, save_path_logs, save_path_model, dataset_dir, reload_trained=True):
         """
             Args:
                 num_epochs: number of epochs to train model
@@ -60,6 +61,7 @@ class CycleGAN:
         self.save_path_logs = save_path_logs
         self.save_path_model = save_path_model
         self.dataset_dir = dataset_dir
+        self.reload_trained = reload_trained
 
     def transform(self):
         """
@@ -95,7 +97,7 @@ class CycleGAN:
             Returns:
                 loss function applied to generated
         """
-        return nn.MSELoss()(target, generated)
+        return F.mse_loss(target, generated)
 
     def cycle_loss(self, real_im, cycle_im):
         """
@@ -105,7 +107,7 @@ class CycleGAN:
             Returns:
                 L1 norm between real_im and cycle_im, want cycled image to be close to original
         """
-        return nn.L1Loss()(real_im, cycle_im)
+        return F.l1_loss(real_im, cycle_im)
 
     def identity_loss(self, real_im, same_im):
         """
@@ -115,16 +117,7 @@ class CycleGAN:
             Returns:
                 L1 norm between real_im and same_im, promotes feature matching for generator
         """
-        return nn.L1Loss()(real_im, same_im)
-
-    def save_model(self, model, save_path):
-        """
-            Args:
-                save_path: path from project root to save model state dict (use .pt extension)
-            Returns:
-                pickle file at at path with model state dict
-        """
-        torch.save(model.state_dict(), save_path)
+        return F.l1_loss(real_im, same_im)
 
     def train(self):
         """
@@ -133,18 +126,31 @@ class CycleGAN:
         # A is paintings, B is photos
         imagesA, imagesB = self.dataset("/datasets" + self.dataset_dir)
 
-        dataloader1 = DataLoader(imagesA, batch_size=BATCH_SIZE, shuffle=True, num_workers=3)
-        dataloader2 = DataLoader(imagesB, batch_size=BATCH_SIZE, shuffle=True, num_workers=3)
+        dataloader1 = DataLoader(imagesA, batch_size=BATCH_SIZE, shuffle=True, num_workers=8)
+        dataloader2 = DataLoader(imagesB, batch_size=BATCH_SIZE, shuffle=True, num_workers=8)
 
-        # generator learns mapping A -> B
-        genA2B = CycleGenerator(image_size=CHANNELS_IMG).to(device)
-        # discriminator differentiates between A and F(B)
-        discB = CycleDiscriminator(channels_img=CHANNELS_IMG).to(device)
+        if self.reload_trained:
+            print("loading pretrained models...")
+            # reload pre-trained models for transfer learning
+            genA2B = torch.load(f"{PROJECT_ROOT}/{self.save_path_model}/genA2B.pt", map_location=device)
+            genB2A = torch.load(f"{PROJECT_ROOT}/{self.save_path_model}/genB2A.pt", map_location=device)
+            discA = torch.load(f"{PROJECT_ROOT}/{self.save_path_model}/discA.pt", map_location=device)
+            discB = torch.load(f"{PROJECT_ROOT}/{self.save_path_model}/discB.pt", map_location=device)
+            disc_optimizer = torch.load(f"{PROJECT_ROOT}/{self.save_path_model}/disc_optimizer.pt", map_location=device)
+            gen_optimizer = torch.load(f"{PROJECT_ROOT}/{self.save_path_model}/gen_optimizer.pt", map_location=device)
+        else:
+            # generator learns mapping A -> B
+            genA2B = CycleGenerator(image_size=CHANNELS_IMG).to(device)
+            # discriminator differentiates between A and F(B)
+            discB = CycleDiscriminator(channels_img=CHANNELS_IMG).to(device)
 
-        # generator learns mapping  B -> A
-        genB2A = CycleGenerator(image_size=CHANNELS_IMG).to(device)
-        # discriminator differentiates between B and G(A)
-        discA = CycleDiscriminator(channels_img=CHANNELS_IMG).to(device)
+            # generator learns mapping  B -> A
+            genB2A = CycleGenerator(image_size=CHANNELS_IMG).to(device)
+            # discriminator differentiates between B and G(A)
+            discA = CycleDiscriminator(channels_img=CHANNELS_IMG).to(device)
+
+            gen_optimizer = Adam(list(genA2B.parameters()) + list(genB2A.parameters()), lr=LEARNING_RATE, betas=BETAS)
+            disc_optimizer = Adam(list(discB.parameters()) + list(discA.parameters()), lr=LEARNING_RATE, betas=BETAS)
 
         writer_realA = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/A/real")
         writer_fakeA = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/A/fake")
@@ -158,10 +164,19 @@ class CycleGAN:
         writer_disc_lossF = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/disc/lossF")
         writer_gen_lossF = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/gen/lossF")
 
-        # optimizers
-        gen_optimizer = Adam(list(genA2B.parameters()) + list(genB2A.parameters()), lr=LEARNING_RATE, betas=BETAS)
-        disc_optimizer = Adam(list(discB.parameters()) + list(discA.parameters()), lr=LEARNING_RATE, betas=BETAS)
-
+        # quantize to int8 model for faster training
+        genA2B = torch.quantization.quantize_dynamic(genA2B, 
+                                                    {torch.nn.Conv2d, torch.nn.ConvTranspose2d, torch.nn.InstanceNorm2d}, 
+                                                    torch.qint8)
+        genB2A = torch.quantization.quantize_dynamic(genB2A, 
+                                                    {torch.nn.Conv2d, torch.nn.ConvTranspose2d, torch.nn.InstanceNorm2d}, 
+                                                    torch.qint8)
+        discA = torch.quantization.quantize_dynamic(discA, 
+                                                    {torch.nn.Conv2d, torch.nn.InstanceNorm2d}, 
+                                                    torch.qint8)
+        discB = torch.quantization.quantize_dynamic(discB, 
+                                                    {torch.nn.Conv2d, torch.nn.InstanceNorm2d}, 
+                                                    torch.qint8)
         genA2B.train()
         discB.train()
         genB2A.train()
@@ -221,9 +236,23 @@ class CycleGAN:
                 gen_loss.backward()
                 gen_optimizer.step()
 
+                best_gen_loss = 10000
+                if gen_loss < best_gen_loss:
+                    # when our generator gets better then its previous best then we'll checkpoint model
+                    torch.save(genA2B, f"{PROJECT_ROOT}/{self.save_path_model}/genA2B.pt")
+                    torch.save(genB2A, f"{PROJECT_ROOT}/{self.save_path_model}/genB2A.pt")
+                    torch.save(discA, f"{PROJECT_ROOT}/{self.save_path_model}/discA.pt")
+                    torch.save(discB, f"{PROJECT_ROOT}/{self.save_path_model}/discB.pt")
+                    torch.save(disc_optimizer, f"{PROJECT_ROOT}/{self.save_path_model}/disc_optimizer.pt")
+                    torch.save(gen_optimizer, f"{PROJECT_ROOT}/{self.save_path_model}/gen_optimizer.pt")
+
+                    # reset best loss for next checkpoint
+                    best_gen_loss = gen_loss
+
                 if batch_id % 10 == 0:
                     print(f"epoch: {epoch}/{self.num_epochs} "
                           f"batch: {batch_id}/{min(len(dataloader1), len(dataloader2))} "
+                          f"step: {step} "
                           f"disc loss A: {discA_loss:.4f} "
                           f"disc loss B: {discB_loss:.4f} "
                           f"gen loss A2B: {genA2B_loss:.4f} "
@@ -248,13 +277,4 @@ class CycleGAN:
 
                         writer_disc_lossF.add_scalar("disc/lossDiscA", discA_loss, global_step=step)
                         writer_gen_lossF.add_scalar("gen/lossGenB2A", genB2A_loss, global_step=step)
-
-                    # save model at end of each batch
-                    torch.save(genA2B, f"{PROJECT_ROOT}/{self.save_path_model}/genA2B.pt")
-                    torch.save(genB2A, f"{PROJECT_ROOT}/{self.save_path_model}/genB2A.pt")
-                    torch.save(discA, f"{PROJECT_ROOT}/{self.save_path_model}/discA.pt")
-                    torch.save(discB, f"{PROJECT_ROOT}/{self.save_path_model}/discB.pt")
-                    torch.save(disc_optimizer, f"{PROJECT_ROOT}/{self.save_path_model}/disc_optimizer.pt")
-                    torch.save(gen_optimizer, f"{PROJECT_ROOT}/{self.save_path_model}/gen_optimizer.pt")
-
-                    step += 1
+                step += 1
