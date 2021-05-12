@@ -25,16 +25,17 @@ the ```Makefile```.  To run the model, simply invoke the ```make``` command and 
 
 At the start of training there may be ```CUDA out of memory``` errors depending on the GPU using in the VM.  In that case, change the ```BATCH_SIZE``` variable to something smaller in ```Models/cycleGAN/CycleGAN.py```
 
-In a new terminal window, run ```tensorboard --logdir ./logs``` to open the TensorBoard logs.  This has to be
-port forwarded to a local computer, so run 
+In a new terminal window, run ```tensorboard --logdir ./logs``` to open the TensorBoard logs.  This has to be port forwarded to a local computer, so run 
 ```gcloud compute ssh user@instance_name -- -NfL 6006:localhost:6006```
-in the local terminal to access the logs. Then visiting ```http://localhost:6006``` in a web browser 
-will display the training logs.
+in the local terminal to access the logs. Then visiting ```http://localhost:6006``` in a web browser will display the training logs.
 
 It takes approximately 3 hours to train the Cycle GAN for 10 epochs using 5 residual layers and float 32.  
 
 Google Cloud SDK (if using a gcloud VM) must be installed for port forwarding.  
 
+### Model Quantization 
+There are options for int8 training, however through experimentation it was established that training the Cycle GAN starting out with int8 weights was extremely unstable and led to model collapse almost immediately in training.  
+This can be averted by training the Cycle GAN for a few mini-batches on float 32 so that the model can learn weights that will produce a stable weight distribution.  
 
 ## Preliminary Results
 The final iteration of the model will allow users to upload images onto a web app, but some initial results can be seen below.  

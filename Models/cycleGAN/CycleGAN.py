@@ -138,7 +138,26 @@ class CycleGAN:
             discB = torch.load(f"{PROJECT_ROOT}/{self.save_path_model}/discB.pt", map_location=device)
             disc_optimizer = torch.load(f"{PROJECT_ROOT}/{self.save_path_model}/disc_optimizer.pt", map_location=device)
             gen_optimizer = torch.load(f"{PROJECT_ROOT}/{self.save_path_model}/gen_optimizer.pt", map_location=device)
+
+            # quantize to int8 model for faster training
+            genA2B = torch.quantization.quantize_dynamic(genA2B, 
+                                                        {torch.nn.Conv2d, torch.nn.ConvTranspose2d, torch.nn.InstanceNorm2d}, 
+                                                        torch.qint8)
+            genB2A = torch.quantization.quantize_dynamic(genB2A, 
+                                                        {torch.nn.Conv2d, torch.nn.ConvTranspose2d, torch.nn.InstanceNorm2d}, 
+                                                        torch.qint8)
+            discA = torch.quantization.quantize_dynamic(discA, 
+                                                        {torch.nn.Conv2d, torch.nn.InstanceNorm2d}, 
+                                                        torch.qint8)
+            discB = torch.quantization.quantize_dynamic(discB, 
+                                                        {torch.nn.Conv2d, torch.nn.InstanceNorm2d}, 
+                                                        torch.qint8)
         else:
+            # don't use int8 on initial training because it collapses
+            # the model.  Instead train for a few batches on float32
+            # then reload those saved models for int8 once there is 
+            # a stable baseline established from the generated images
+
             # generator learns mapping A -> B
             genA2B = CycleGenerator(image_size=CHANNELS_IMG).to(device)
             # discriminator differentiates between A and F(B)
@@ -164,19 +183,7 @@ class CycleGAN:
         writer_disc_lossF = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/disc/lossF")
         writer_gen_lossF = SummaryWriter(f"{PROJECT_ROOT}/logs/{self.save_path_logs}/gen/lossF")
 
-        # quantize to int8 model for faster training
-        genA2B = torch.quantization.quantize_dynamic(genA2B, 
-                                                    {torch.nn.Conv2d, torch.nn.ConvTranspose2d, torch.nn.InstanceNorm2d}, 
-                                                    torch.qint8)
-        genB2A = torch.quantization.quantize_dynamic(genB2A, 
-                                                    {torch.nn.Conv2d, torch.nn.ConvTranspose2d, torch.nn.InstanceNorm2d}, 
-                                                    torch.qint8)
-        discA = torch.quantization.quantize_dynamic(discA, 
-                                                    {torch.nn.Conv2d, torch.nn.InstanceNorm2d}, 
-                                                    torch.qint8)
-        discB = torch.quantization.quantize_dynamic(discB, 
-                                                    {torch.nn.Conv2d, torch.nn.InstanceNorm2d}, 
-                                                    torch.qint8)
+        
         genA2B.train()
         discB.train()
         genB2A.train()
