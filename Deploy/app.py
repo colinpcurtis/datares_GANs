@@ -109,11 +109,14 @@ outputbox = html.Div([
         [
             dbc.CardBody(
                 [
-                    html.Div(id='output-image-upload')
+                    dcc.Loading(id="loading-1",
+                                children=[html.Div(id='output-image-upload')],
+                                type="default")
+                    # html.Div(id='output-image-upload')
                 ]
-            )
+            ),
         ],
-        style={"width": "25rem", "height":"25rem"})
+        style={"width": "25rem", "height":"25rem"}),
     ])
 
 
@@ -198,8 +201,7 @@ def update_inputbox(list_of_contents, list_of_names):
 @app.callback(
     Output('output-image-upload', 'children'),
     [Input('process', "n_clicks")],
-    State('upload-image', 'filename')
-    )
+    State('upload-image', 'filename'), prevent_initial_call=True)
 def update_output(n, list_of_names):
     if n is not None:
         # process
