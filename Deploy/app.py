@@ -1,5 +1,5 @@
 import base64
-import os,sys
+import os, sys
 import datetime
 from urllib.parse import quote as urlquote
 import re
@@ -9,14 +9,14 @@ from PIL import Image
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_bootstrap_components as dbc
-from dash_extensions import Download
 from dash.dependencies import Input, Output, State
 from model import load_model, get_prediction
 from setup import PROJECT_ROOT, IMG_DIR
-
+from dash_extensions import Download
+from dash_extensions.snippets import send_file
 
 UPLOAD_DIRECTORY = "uploaded_img"
-gen = load_model(f"{PROJECT_ROOT}/genB2A.pt")  
+gen = load_model(f"{PROJECT_ROOT}/genB2A.pt")
 # load model at server startup so we don't waste time loading it when we get an inference request
 
 # TODO: need to delete uploaded images after some time frame or we'll run out of space
@@ -29,7 +29,6 @@ server = Flask(__name__)
 app = dash.Dash(server=server, external_stylesheets=[dbc.themes.MINTY])
 app.title = 'Make-A-Monet'
 
-
 # Frontend Components
 
 
@@ -39,7 +38,7 @@ navbar = dbc.NavbarSimple(
         dbc.DropdownMenu(
             children=[
                 # dbc.DropdownMenuItem("More pages", header=True),
-                dbc.DropdownMenuItem("Home", href = "/"),
+                dbc.DropdownMenuItem("Home", href="/"),
                 dbc.DropdownMenuItem("GitHub", href="https://github.com/colinpcurtis/datares_GANs"),
                 dbc.DropdownMenuItem("Model Architecture", href="/page-2"),
             ],
@@ -52,12 +51,12 @@ navbar = dbc.NavbarSimple(
     brand_href="#",
     color="primary",
     dark=True,
-    style={'padding-left':'3.1%'}
+    style={'padding-left': '3.1%'}
 )
 
 # Inputbox
 inputbox = html.Div([
-    html.H4("Original Image", style = {'font-weight': 'bold'}),
+    html.H4("Original Image", style={'font-weight': 'bold'}),
     dbc.Card(
         [
             dbc.CardBody(
@@ -66,11 +65,11 @@ inputbox = html.Div([
                 ]
             )
         ],
-        style={"width": "25rem", "height":"25rem"}),
+        style={"width": "25rem", "height": "25rem"}),
     dcc.Upload(id="upload-image",
-                children=dbc.Button("Upload", color="primary", size='lg'),
-                multiple=True)
-    ])
+               children=dbc.Button("Upload", color="primary", size='lg'),
+               multiple=True)
+])
 
 # Processbox
 # processbox = dbc.Card(
@@ -91,10 +90,10 @@ inputbox = html.Div([
 
 
 processbox = dbc.Row(
-                [
-                    dbc.Col( dbc.Button("Process", id="process", color="primary", size='lg'), width="auto"),
-                ], align="center"
-            )
+    [
+        dbc.Col(dbc.Button("Process", id="process", color="primary", size='lg'), width="auto"),
+    ], align="center"
+)
 
 # outputbox
 # outputbox = dbc.Card(
@@ -104,7 +103,7 @@ processbox = dbc.Row(
 #     style={"width": "18rem","height":"18rem"}
 # )
 outputbox = html.Div([
-    html.H4("Transformed Image", style = {'font-weight': 'bold'}),
+    html.H4("Transformed Image", style={'font-weight': 'bold'}),
     dbc.Card(
         [
             dbc.CardBody(
@@ -116,9 +115,9 @@ outputbox = html.Div([
                 ]
             ),
         ],
-        style={"width": "25rem", "height":"25rem"}),
-    ])
-
+        style={"width": "25rem", "height": "25rem"}),
+    html.Div([dbc.Button("Download", id="download-btn", color="primary", size='lg'), Download(id="download")])
+])
 
 my_content = html.Div(id="page-content", children=[])
 # app layout
@@ -129,6 +128,7 @@ app.layout = html.Div([
     # html.H2('Interactive Image Translation',
     #         style={'font-weight': 'bold', 'padding-left': '10%', 'font-size': '120%'}),
 ])
+
 
 @app.callback(
     Output("page-content", "children"),
@@ -151,7 +151,7 @@ def render_page_content(pathname):
                         [
                             dbc.Col(inputbox, width="auto"),
                             dbc.Col(processbox, width="auto", style={'padding-bottom': '3%'}),
-                            dbc.Col(outputbox, width="auto", style={'padding-bottom': '3.5%'}),
+                            dbc.Col(outputbox, width="auto"),
                         ],
                         style={'padding-left': '15%', 'padding-right': '15%', 'padding-top': '5%'}, align="center"
                     ),
@@ -185,17 +185,19 @@ def parse_contents(image):
 # upload the img
 @app.callback(Output('input-image-upload', 'children'),
               Input('upload-image', 'contents'),
-              State('upload-image', 'filename'),  prevent_initial_call=True)
+              State('upload-image', 'filename'), prevent_initial_call=True)
 def update_inputbox(list_of_contents, list_of_names):
     if list_of_names is not None and list_of_contents is not None:
         for name, data in zip(list_of_names, list_of_contents):
             save_file(name, data)
 
-    current_img = os.path.join(IMG_DIR,list_of_names[0]) 
+    current_img = os.path.join(IMG_DIR, list_of_names[0])
     encoded_image = base64.b64encode(open(current_img, 'rb').read())
     return html.Div([
-        html.Img(src='data:image/png;base64,{}'.format(encoded_image.decode()), style={'width': '100%', 'height':"22.5rem"})
+        html.Img(src='data:image/png;base64,{}'.format(encoded_image.decode()),
+                 style={'width': '100%', 'height': "22.5rem"})
     ])
+
 
 # process the img
 @app.callback(
@@ -205,7 +207,7 @@ def update_inputbox(list_of_contents, list_of_names):
 def update_output(n, list_of_names):
     if n is not None:
         # process
-        current_img = os.path.join(IMG_DIR,list_of_names[0])
+        current_img = os.path.join(IMG_DIR, list_of_names[0])
         new_name = "new_" + list_of_names[0]
         pred = get_prediction(gen, current_img)
         # remove the original uploaded image since we're done using it
@@ -234,8 +236,20 @@ def file_download_link(filename):
     return html.A(filename, href=location)
 
 
+@app.callback(
+    Output("download", "data"),
+    [Input("download-btn", "n_clicks"), State("upload-image", "filename")],
+    prevent_initial_call=True)
+def update_output(n, uploaded_filename):
+    """Save uploaded files and regenerate the file list."""
+    if n > 0:
+        file_in_question = 'new_{}'.format(uploaded_filename[0])
+        print(file_in_question)
+        return send_file('uploaded_img/{}'.format(file_in_question))
+
+
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 8000))
-    # heroku sets its own port environment variable, so we need to run the server on 
+    # heroku sets its own port environment variable, so we need to run the server on
     # that port when on the server and otherwise 8888
     app.run_server(debug=False, host='0.0.0.0', port=port)
