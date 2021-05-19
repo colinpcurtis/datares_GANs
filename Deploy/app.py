@@ -38,81 +38,134 @@ navbar = dbc.NavbarSimple(
     children=[
         dbc.DropdownMenu(
             children=[
-                dbc.DropdownMenuItem("More pages", header=True),
-                dbc.DropdownMenuItem("Github", href="https://github.com/colinpcurtis/datares_GANs"),
+                # dbc.DropdownMenuItem("More pages", header=True),
+                dbc.DropdownMenuItem("Home", href = "/"),
+                dbc.DropdownMenuItem("GitHub", href="https://github.com/colinpcurtis/datares_GANs"),
+                dbc.DropdownMenuItem("Model Architecture", href="/page-2"),
             ],
             nav=True,
             in_navbar=True,
             label="More",
         ),
     ],
-    brand="CycleGAN Image Style Transfer",
+    brand="CycleGAN Interactive Image Transformation",
     brand_href="#",
     color="primary",
     dark=True,
+    style={'padding-left':'3.1%'}
 )
 
 # Inputbox
-inputbox = dbc.Card(
-    [
-        dbc.CardBody(
-            [
-                html.Div(id='input-image-upload'), 
-                dbc.Row(
+inputbox = html.Div([
+    html.H4("Original Image", style = {'font-weight': 'bold'}),
+    dbc.Card(
+        [
+            dbc.CardBody(
                 [
-                    dbc.Col( dcc.Upload(id="upload-image",
-                                        children=dbc.Button("Upload", color="primary"),
-                                        multiple=True), width="auto"),
-                ],align="center"
+                    html.Div(id='input-image-upload')
+                ]
             )
-            ]
-        )
-    ],
-    style={"width": "18rem","height":"18rem"}
-)
+        ],
+        style={"width": "25rem", "height":"25rem"}),
+    dcc.Upload(id="upload-image",
+                children=dbc.Button("Upload", color="primary", size='lg'),
+                multiple=True)
+    ])
 
 # Processbox
-processbox = dbc.Card(
-    [
-        dbc.CardBody(
-            [
-                dbc.Row(
+# processbox = dbc.Card(
+#     [
+#
+#         dbc.CardBody(
+#             [
+#                 dbc.Row(
+#                 [
+#                     dbc.Col( dbc.Button("Process", id="process", color="primary"), width="auto"),
+#                 ],align="center"
+#             )
+#             ]
+#         )
+#     ],
+#     #style={"width": "12rem","height":"12rem"}
+# )
+
+
+processbox = dbc.Row(
                 [
-                    dbc.Col( dbc.Button("Process", id="process", color="primary"), width="auto"),
-                ],align="center"
+                    dbc.Col( dbc.Button("Process", id="process", color="primary", size='lg'), width="auto"),
+                ], align="center"
             )
-            ]
-        )
-    ],
-    style={"width": "12rem","height":"12rem"}
-)
 
 # outputbox
-outputbox = dbc.Card(
-    [
-        html.Div(id='output-image-upload'),
-    ],
-    style={"width": "18rem","height":"18rem"}
-)
+# outputbox = dbc.Card(
+#     [
+#         html.Div(id='output-image-upload'),
+#     ],
+#     style={"width": "18rem","height":"18rem"}
+# )
+outputbox = html.Div([
+    html.H4("Transformed Image", style = {'font-weight': 'bold'}),
+    dbc.Card(
+        [
+            dbc.CardBody(
+                [
+                    dcc.Loading(id="loading-1",
+                                children=[html.Div(id='output-image-upload')],
+                                type="default")
+                    # html.Div(id='output-image-upload')
+                ]
+            ),
+        ],
+        style={"width": "25rem", "height":"25rem"}),
+    ])
 
+
+my_content = html.Div(id="page-content", children=[])
 # app layout
 app.layout = html.Div([
+    dcc.Location(id="url"),
     navbar,
-    html.H2('Interactive Image Translation',
-            style={'font-weight': 'bold', 'padding-left': '10%', 'font-size': '120%'}),
-    html.Div(
-        [
-            dbc.Row(
-                [
-                    dbc.Col(inputbox, width="auto"),
-                    dbc.Col(processbox, width="auto"),
-                    dbc.Col(outputbox, width="auto"),
-                ],
-                style={'padding-left':'15%','padding-right':'15%','padding-top':'10%'},align="center"
-            ),
-        ]
-    )
+    my_content
+    # html.H2('Interactive Image Translation',
+    #         style={'font-weight': 'bold', 'padding-left': '10%', 'font-size': '120%'}),
 ])
+
+@app.callback(
+    Output("page-content", "children"),
+    [Input("url", "pathname")]
+)
+def render_page_content(pathname):
+    if pathname == "/page-2":
+        image_filename = 'cycle_gan_architecture.png'
+        encoded_image = base64.b64encode(open(image_filename, 'rb').read())
+        return [
+            html.Div([
+                html.Img(src='data:image/png;base64,{}'.format(encoded_image.decode()), style={'width': '68%'})
+            ], style={'textAlign': 'center'})
+        ]
+    elif pathname == "/":
+        return [
+            html.Div(
+                [
+                    dbc.Row(
+                        [
+                            dbc.Col(inputbox, width="auto"),
+                            dbc.Col(processbox, width="auto", style={'padding-bottom': '3%'}),
+                            dbc.Col(outputbox, width="auto", style={'padding-bottom': '3.5%'}),
+                        ],
+                        style={'padding-left': '15%', 'padding-right': '15%', 'padding-top': '5%'}, align="center"
+                    ),
+                ]
+            )
+        ]
+    # # If the user tries to reach a different page, return a 404 message
+    # return dbc.Jumbotron(
+    #     [
+    #         html.H1("404: Not found", className="text-danger"),
+    #         html.Hr(),
+    #         html.P(f"The pathname {pathname} was not recognised..."),
+    #     ]
+    # )
 
 
 def save_file(name, content):
@@ -139,18 +192,16 @@ def update_inputbox(list_of_contents, list_of_names):
             save_file(name, data)
 
     current_img = os.path.join(IMG_DIR,list_of_names[0]) 
-
     encoded_image = base64.b64encode(open(current_img, 'rb').read())
     return html.Div([
-        html.Img(src='data:image/png;base64,{}'.format(encoded_image.decode()), style={'width': '100%'})
+        html.Img(src='data:image/png;base64,{}'.format(encoded_image.decode()), style={'width': '100%', 'height':"22.5rem"})
     ])
 
 # process the img
 @app.callback(
     Output('output-image-upload', 'children'),
-    [Input('process',"n_clicks")],
-    State('upload-image', 'filename')
-    )
+    [Input('process', "n_clicks")],
+    State('upload-image', 'filename'), prevent_initial_call=True)
 def update_output(n, list_of_names):
     if n is not None:
         # process
@@ -184,7 +235,7 @@ def file_download_link(filename):
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get('PORT', 8888))
+    port = int(os.environ.get('PORT', 8000))
     # heroku sets its own port environment variable, so we need to run the server on 
     # that port when on the server and otherwise 8888
     app.run_server(debug=False, host='0.0.0.0', port=port)
