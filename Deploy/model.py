@@ -28,6 +28,8 @@ def load_model(path: str):
     quant_model = torch.quantization.quantize_dynamic(model, 
                                                       {torch.nn.Conv2d, torch.nn.ConvTranspose2d, torch.nn.InstanceNorm2d}, 
                                                       torch.qint8)
+    quant_model = torch.jit.script(quant_model)
+
     quant_model.eval()
     return quant_model
 
@@ -50,7 +52,10 @@ def get_prediction(model, im_path: str):
     tensor = transform(im_bytes)
 
     # do foward pass on model to get prediction
-    prediction = model.forward(tensor).squeeze()  # squeeze makes image [3, 512, 512]
+    with torch.no_grad():
+        # use context manager to minimize memory footprint
+        prediction = model.forward(tensor).squeeze()  # squeeze makes image [3, 512, 512]
+
     assert prediction.size() == torch.Size([3, 512, 512])
 
     tensorToPIL = transforms.ToPILImage(mode="RGB")

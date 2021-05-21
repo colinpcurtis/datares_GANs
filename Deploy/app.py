@@ -19,8 +19,6 @@ UPLOAD_DIRECTORY = "uploaded_img"
 gen = load_model(f"{PROJECT_ROOT}/genB2A.pt")
 # load model at server startup so we don't waste time loading it when we get an inference request
 
-# TODO: need to delete uploaded images after some time frame or we'll run out of space
-
 if not os.path.exists(UPLOAD_DIRECTORY):
     os.makedirs(UPLOAD_DIRECTORY)
 
@@ -47,7 +45,7 @@ navbar = dbc.NavbarSimple(
             label="More",
         ),
     ],
-    brand="CycleGAN Interactive Image Transformation",
+    brand="UCLA DataRes Spring 2021: Make-A-Monet",
     brand_href="#",
     color="primary",
     dark=True,
@@ -71,23 +69,6 @@ inputbox = html.Div([
                multiple=True)
 ])
 
-# Processbox
-# processbox = dbc.Card(
-#     [
-#
-#         dbc.CardBody(
-#             [
-#                 dbc.Row(
-#                 [
-#                     dbc.Col( dbc.Button("Process", id="process", color="primary"), width="auto"),
-#                 ],align="center"
-#             )
-#             ]
-#         )
-#     ],
-#     #style={"width": "12rem","height":"12rem"}
-# )
-
 
 processbox = dbc.Row(
     [
@@ -95,13 +76,7 @@ processbox = dbc.Row(
     ], align="center"
 )
 
-# outputbox
-# outputbox = dbc.Card(
-#     [
-#         html.Div(id='output-image-upload'),
-#     ],
-#     style={"width": "18rem","height":"18rem"}
-# )
+
 outputbox = html.Div([
     html.H4("Transformed Image", style={'font-weight': 'bold'}),
     dbc.Card(
@@ -125,8 +100,6 @@ app.layout = html.Div([
     dcc.Location(id="url"),
     navbar,
     my_content
-    # html.H2('Interactive Image Translation',
-    #         style={'font-weight': 'bold', 'padding-left': '10%', 'font-size': '120%'}),
 ])
 
 
@@ -158,14 +131,6 @@ def render_page_content(pathname):
                 ]
             )
         ]
-    # # If the user tries to reach a different page, return a 404 message
-    # return dbc.Jumbotron(
-    #     [
-    #         html.H1("404: Not found", className="text-danger"),
-    #         html.Hr(),
-    #         html.P(f"The pathname {pathname} was not recognised..."),
-    #     ]
-    # )
 
 
 def save_file(name, content):
@@ -251,5 +216,5 @@ def update_output(n, uploaded_filename):
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 8000))
     # heroku sets its own port environment variable, so we need to run the server on
-    # that port when on the server and otherwise 8888
+    # that port when on the server and otherwise 8000
     app.run_server(debug=False, host='0.0.0.0', port=port)
