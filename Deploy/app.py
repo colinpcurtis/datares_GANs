@@ -224,7 +224,7 @@ def file_download_link(filename):
     Output("download", "data"),
     [Input("download-btn", "n_clicks"), State("upload-image", "filename")],
     prevent_initial_call=True)
-def update_output(n, uploaded_filename):
+def download_file(n, uploaded_filename):
     """Save uploaded files and regenerate the file list."""
     if n > 0:
         file_in_question = 'new_{}'.format(uploaded_filename[0])
